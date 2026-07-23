@@ -10,13 +10,13 @@ export default function Signup() {
       <Header />
       <div className="body flex column a-center j-center">
         <div className="text flex column">
-          <h1>Unlimited movies, TV shows and more</h1>
-          <h2>Watch anymore. Cancel anytime.</h2>
-          <h6>Ready to watch? Enter your email to create or restart membership</h6>
+          <h1>Unlimited Entertainment, All in One Place</h1>
+          <h2>Watch Your Favorite Movies, Anime and TV Shows Anytime, Anywhere.</h2>
+          <h6>Get started today. Enter your email to create or restart your membership.</h6>
         </div>
         <div className="form">
           <input type="email" placeholder="Email Address" name="email" />
-          <input type="password" placeholder="Password" name="password"  />
+          <input type="password" placeholder="Password" name="password" />
           <button>Get Started</button>
           <div>
             <button>Log In</button>
