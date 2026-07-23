@@ -3,24 +3,17 @@ import { useNavigate } from "react-router-dom";
 import logo from "../assets/logo.png";
 import styled from "styled-components";
 
-<<<<<<< HEAD
-export default function Header() {
-=======
 export default function Header(props) {
     const navigate = useNavigate();
->>>>>>> 61d7477ea92e7ca15190e540e7930eb8f207df2d
     return (
         <Container>
             <div className="logo">
                 <img src={logo} alt="logo" />
-<<<<<<< HEAD
-=======
                 <div>
                     <button onClick={()=> navigate(props.login ? "/login" : "signup")}>
                         {props.login ? "Login" : "Signup"}
                     </button>
                 </div>
->>>>>>> 61d7477ea92e7ca15190e540e7930eb8f207df2d
             </div>
         </Container>
     );
