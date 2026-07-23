@@ -3,57 +3,68 @@ import { useNavigate } from "react-router-dom";
 import logo from "../assets/logo.png";
 import styled from "styled-components";
 
+
 export default function Header(props) {
-    const navigate = useNavigate();
-    return (
-        <Container>
-            <div className="logo">
-                <img src={logo} alt="logo" />
-                <div>
-                    <button onClick={()=> navigate(props.login ? "/login" : "signup")}>
-                        {props.login ? "Login" : "Signup"}
-                    </button>
-                </div>
-            </div>
-        </Container>
-    );
+  const navigate = useNavigate();
+  return (
+    <Container>
+      <div className="logo">
+        <img src={logo} alt="logo" />
+
+        <button onClick={() => navigate(props.login ? "/login" : "/signup")}>
+          {props.login ? "Login" : "Sign Up"}
+        </button>
+      </div>
+    </Container>
+  );
 }
 
 const Container = styled.header`
-  width: 100%;
-  height: 70px;
-  padding: 0 2rem;
-  background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(10px);
-
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-
-  position: fixed;
+  position: absolute;
   top: 0;
   left: 0;
-  z-index: 1000;
+  width: 100%;
+  padding: 1.5rem 4rem;
+  box-sizing: border-box;
+  z-index: 100;
 
   .logo {
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    cursor: pointer;
+    width: 100%;
   }
 
-  .logo img {
-    width: 55px;
-    height: 55px;
-    object-fit: contain;
+  img {
+    width: 170px;
+  }
+
+  button {
+    background: #e50914;
+    color: #fff;
+    border: none;
+    padding: 0.7rem 1.6rem;
+    border-radius: 4px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.3s ease;
+  }
+
+  button:hover {
+    background: #c11119;
   }
 
   @media (max-width: 768px) {
-    height: 60px;
-    padding: 0 1rem;
+    padding: 1rem 2rem;
 
-    .logo img {
-      width: 45px;
-      height: 45px;
+    img {
+      width: 120px;
+    }
+
+    button {
+      padding: 0.6rem 1.1rem;
+      font-size: 0.9rem;
     }
   }
 `;

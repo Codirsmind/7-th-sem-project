@@ -1,16 +1,64 @@
-import React from "react";
+import React, { useState } from "react";
 import styled from "styled-components";
 import BackgroundImage from "../components/BackgroundImage";
 import Header from "../components/Header";
 
 export default function Signup() {
+  const [showPassword, setShowPassword] = useState(false);
+  const [formValues, setFormValues] = useState({
+    email:"",
+    password:"",
+  });
+  const handleClick = async() => {
+    if (!showPassword) {
+      setShowPassword(true);
+    } else {
+      // Signup Logic
+      console.log("Signup");
+      console.log(formValues);
+    } 
+  };
+
   return (
     <Container>
       <BackgroundImage />
-      <Header />
-      <div className="body flex column a-center j-center">
-        <div className="text flex column">
-          <h1>Hi</h1>
+      <Header login />
+
+      <div className="body">
+        <div className="text">
+          <h1>Unlimited Entertainment, All in One Place</h1>
+          <h2>
+            Watch Your Favorite Movies, Anime and TV Shows Anytime,
+            Anywhere.
+          </h2>
+          <h6>
+            Ready to watch? Enter your email to create or restart your
+            membership.
+          </h6>
+        </div>
+
+        <div className="form">
+          <input
+            type="email"
+            placeholder="Email Address"
+            name="email"
+            value={formValues.email}
+            onChange={(e)=>setFormValues({...formValues,[e.target.name]:e.target.value})}
+          />
+
+          {showPassword && (
+            <input
+              type="password"
+              placeholder="Password"
+              name="password"
+              value={formValues.password}
+              onChange={(e)=>setFormValues({...formValues,[e.target.name]:e.target.value})}
+            />
+          )}
+
+          <button onClick={handleClick}>
+            {showPassword ? "Sign Up" : "Get Started"}
+          </button>
         </div>
       </div>
     </Container>
@@ -21,39 +69,39 @@ const Container = styled.div`
   width: 100%;
   min-height: 100vh;
   position: relative;
-  overflow: hidden;
+  overflow-x: hidden;
 
   .body {
     position: relative;
     z-index: 1;
 
     min-height: 100vh;
-    width: 100%;
 
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
 
-    padding: 2rem;
     text-align: center;
-    color: #ffffff;
+    color: white;
+
+    padding: 2rem;
   }
 
   .text {
-    max-width: 800px;
-    margin-bottom: 2.5rem;
-    gap: 1rem;
+    max-width: 850px;
+    margin-bottom: 2rem;
 
     h1 {
-      font-size: 3.5rem;
-      font-weight: 700;
-      line-height: 1.2;
+      font-size: 3.8rem;
+      font-weight: 900;
+      margin-bottom: 1rem;
     }
 
     h2 {
-      font-size: 1.8rem;
-      font-weight: 400;
+      font-size: 1.7rem;
+      font-weight: 500;
+      margin-bottom: 1rem;
     }
 
     h6 {
@@ -63,60 +111,55 @@ const Container = styled.div`
   }
 
   .form {
+    width: 100%;
+    max-width: 500px;
+
     display: flex;
     flex-direction: column;
     gap: 1rem;
-    width: 100%;
-    max-width: 450px;
 
     input {
+      width: 100%;
       padding: 1rem;
       font-size: 1rem;
-      border: 1px solid rgba(255, 255, 255, 0.4);
-      border-radius: 6px;
-      outline: none;
-      background: rgba(0, 0, 0, 0.6);
       color: white;
+      background: rgba(22, 22, 22, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      border-radius: 4px;
+      outline: none;
+      box-sizing: border-box;
 
       &::placeholder {
-        color: #d1d1d1;
+        color: #b3b3b3;
+      }
+
+      &:focus {
+        border-color: white;
       }
     }
 
     button {
+      width: 100%;
       padding: 1rem;
-      font-size: 1rem;
-      font-weight: 600;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: 0.3s ease;
-    }
-
-    button:first-of-type {
       background: #e50914;
       color: white;
-
-      &:hover {
-        background: #c40812;
-      }
+      font-size: 1.2rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: 0.3s;
     }
 
-    div button {
-      background: transparent;
-      color: white;
-      border: 1px solid white;
-
-      &:hover {
-        background: rgba(255, 255, 255, 0.1);
-      }
+    button:hover {
+      background: #c11119;
     }
   }
 
   @media (max-width: 768px) {
     .text {
       h1 {
-        font-size: 2.3rem;
+        font-size: 2.5rem;
       }
 
       h2 {
