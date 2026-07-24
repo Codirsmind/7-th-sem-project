@@ -1,23 +1,71 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import BackgroundImage from "../components/BackgroundImage";
 import Header from "../components/Header";
+import {createUserWithEmailAndPassword, onAuthStateChanged} from "firebase/auth"
+import { firebaseAuth } from "../utils/firebase-config";
+import { useNavigate } from "react-router-dom";
 
 export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
+  const navigate = useNavigate();
   const [formValues, setFormValues] = useState({
     email:"",
     password:"",
   });
-  const handleClick = async() => {
-    if (!showPassword) {
-      setShowPassword(true);
-    } else {
-      // Signup Logic
-      console.log("Signup");
-      console.log(formValues);
-    } 
-  };
+
+  const handleSignUp = async () => {
+  if (!showPassword) {
+    setShowPassword(true);
+    return;
+  }
+
+  const { email, password } = formValues;
+
+  if (!email || !password) {
+    alert("Please enter both email and password.");
+    return;
+  }
+
+  try {
+    const userCredential = await createUserWithEmailAndPassword(
+      firebaseAuth,
+      email,
+      password
+    );
+
+    console.log("User created:", userCredential.user);
+  } catch (error) {
+    console.error(error);
+
+    switch (error.code) {
+      case "auth/email-already-in-use":
+        alert("This email is already registered.");
+        break;
+
+      case "auth/invalid-email":
+        alert("Please enter a valid email.");
+        break;
+
+      case "auth/weak-password":
+        alert("Password must be at least 6 characters.");
+        break;
+
+      default:
+        alert(error.message);
+    }
+  }
+};
+
+useEffect(() => {
+  const unsubscribe = onAuthStateChanged(firebaseAuth, (currentUser) => {
+    if (currentUser) {
+      navigate("/");
+    }
+  });
+
+  return () => unsubscribe();
+}, [navigate]);
 
   return (
     <Container>
@@ -56,7 +104,7 @@ export default function Signup() {
             />
           )}
 
-          <button onClick={handleClick}>
+          <button onClick={handleSignUp}>
             {showPassword ? "Sign Up" : "Get Started"}
           </button>
         </div>
