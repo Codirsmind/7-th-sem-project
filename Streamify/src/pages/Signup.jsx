@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { toast } from "react-toastify";
 import styled from "styled-components";
 import BackgroundImage from "../components/BackgroundImage";
 import Header from "../components/Header";
@@ -23,38 +24,46 @@ export default function Signup() {
   const { email, password } = formValues;
 
   if (!email || !password) {
-    alert("Please enter both email and password.");
+    toast.error("Please enter both email and password.");
     return;
   }
 
-  try {
-    const userCredential = await createUserWithEmailAndPassword(
-      firebaseAuth,
-      email,
-      password
-    );
+ try {
+  await createUserWithEmailAndPassword(
+    firebaseAuth,
+    email,
+    password
+  );
 
-    console.log("User created:", userCredential.user);
-  } catch (error) {
-    console.error(error);
+  toast.success("Account created successfully! 🎉", {
+    autoClose: 1500,
+    onClose: () => navigate("/"),
+  });
 
-    switch (error.code) {
-      case "auth/email-already-in-use":
-        alert("This email is already registered.");
-        break;
+} catch (error) {
+  console.error(error);
 
-      case "auth/invalid-email":
-        alert("Please enter a valid email.");
-        break;
+  switch (error.code) {
+    case "auth/email-already-in-use":
+      toast.error("An account with this email already exists.");
+      break;
 
-      case "auth/weak-password":
-        alert("Password must be at least 6 characters.");
-        break;
+    case "auth/invalid-email":
+      toast.error("Please enter a valid email address.");
+      break;
 
-      default:
-        alert(error.message);
-    }
+    case "auth/weak-password":
+      toast.error("Password must be at least 6 characters long.");
+      break;
+
+    case "auth/network-request-failed":
+      toast.error("Network error. Please check your internet connection.");
+      break;
+
+    default:
+      toast.error("Unable to create your account. Please try again.");
   }
+}
 };
 
 useEffect(() => {

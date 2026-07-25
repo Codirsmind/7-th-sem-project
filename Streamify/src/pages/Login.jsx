@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { toast } from "react-toastify";
 import styled from "styled-components";
 import BackgroundImage from "../components/BackgroundImage";
 import Header from "../components/Header";
@@ -17,40 +18,53 @@ export default function Login() {
     const { email, password } = formValues;
 
     if (!email || !password) {
-      alert("Please enter both email and password.");
+      toast.error("Please enter both email and password.");
       return;
     }
 
     try {
-      const userCredential = await signInWithEmailAndPassword(
+      await signInWithEmailAndPassword(
         firebaseAuth,
         email,
         password
       );
 
-      console.log("Logged in:", userCredential.user);
+      toast.success("Login Successful 🎉");
+
+      setTimeout(() => {
+        navigate("/");
+      }, 1500);
     } catch (error) {
       console.error(error);
 
       switch (error.code) {
         case "auth/user-not-found":
-          alert("No account found with this email.");
+          toast.error("No account found with this email.");
           break;
 
         case "auth/wrong-password":
-          alert("Incorrect password.");
+          toast.error("Incorrect password.");
           break;
 
         case "auth/invalid-credential":
-          alert("Invalid email or password.");
+          toast.error("Invalid email or password.");
           break;
 
         case "auth/invalid-email":
-          alert("Please enter a valid email.");
+          toast.error("Please enter a valid email address.");
+          break;
+
+        case "auth/too-many-requests":
+          toast.error("Too many failed attempts. Please try again later.");
+          break;
+
+        case "auth/network-request-failed":
+          toast.error("Network error. Check your internet connection.");
           break;
 
         default:
-          alert(error.message);
+          toast.error("Something went wrong. Please try again.");
+          console.error(error.message);
       }
     }
   };
