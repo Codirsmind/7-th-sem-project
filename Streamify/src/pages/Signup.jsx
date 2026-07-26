@@ -35,7 +35,7 @@ export default function Signup() {
     password
   );
 
-  toast.success("Account created successfully! 🎉", {
+  toast.success("Account created successfully!", {
     autoClose: 1500,
     onClose: () => navigate("/"),
   });

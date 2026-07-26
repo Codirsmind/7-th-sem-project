@@ -1,111 +1,252 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
 import styled from "styled-components";
+import backgroundImage from "../assets/home.png";
+import titleImage from "../assets/title.png";
+import { FaPlay } from "react-icons/fa";
+import { AiOutlineInfoCircle } from "react-icons/ai";
 
 export default function Streamify() {
+
   const [isScrolled, setScrolled] = useState(false);
 
-  window.onscroll = ()=>{
-    setScrolled(window.pageYOffset === 0 ? false : true);
-    return ()=> (window.onscroll =null);
-  };
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 0);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
 
 
- return (
+  return (
     <Container>
       <Navbar isScrolled={isScrolled} />
 
       <main className="hero">
-        <div className="content">
-          <h1>Unlimited Movies, TV Shows, Anime & More</h1>
-          <p>Discover thousands of movies and series in one place.</p>
+        <img src={backgroundImage} alt="" className="hero-image" />
 
-          <button>Watch Now</button>
+        <div className="overlay"></div>
+
+        <div className="content">
+          <div className="hero-content">
+            <img
+              src={titleImage}
+              alt="Movie Title"
+              className="title-image"
+            />
+
+            <div className="buttons">
+              <button className="play-btn">
+                <FaPlay className="icon" />
+                Watch Now
+              </button>
+
+              <button className="info-btn">
+                <AiOutlineInfoCircle className="icon" />
+                More Info
+              </button>
+            </div>
+          </div>
         </div>
       </main>
+      {/* Temporary section so the page can scroll */}
+      <section className="movies"></section>
     </Container>
   );
 }
 
 const Container = styled.div`
-  min-height: 100vh;
-  width: 100%;
   background: #000;
+  color: #fff;
   overflow-x: hidden;
 
   .hero {
+    position: relative;
     height: 100vh;
-    padding-top: 5rem;
+    width: 100%;
+    overflow: hidden;
+  }
+.movies {
+  min-height: 150vh;
+  background: #141414;
+}
+  /* Background */
+  .hero-image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    transform: scale(1.05);
+    transition: transform 8s ease;
+    z-index: 0;
+  }
 
+  .hero:hover .hero-image {
+    transform: scale(1.1);
+  }
+
+  /* Netflix-style Overlay */
+  .overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to right,
+      rgba(0, 0, 0, 0.95) 0%,
+      rgba(0, 0, 0, 0.75) 20%,
+      rgba(0, 0, 0, 0.45) 45%,
+      rgba(0, 0, 0, 0.25) 65%,
+      rgba(0, 0, 0, 0.8) 100%
+    );
+    z-index: 1;
+  }
+
+  /* Bottom Fade */
+  .hero::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: 18rem;
+    background: linear-gradient(
+      to top,
+      #000 0%,
+      rgba(0, 0, 0, 0.85) 35%,
+      transparent 100%
+    );
+    z-index: 2;
+  }
+
+  /* Content */
+  .content {
+    position: absolute;
+    top: 58%;
+    left: 5rem;
+    transform: translateY(-50%);
+    z-index: 3;
+  }
+
+  .hero-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    max-width: 520px;
+  }
+
+  /* Logo */
+  .title-image {
+    width: 420px;
+    max-width: 100%;
+    object-fit: contain;
+  }
+
+  /* Description */
+  .description {
+    color: #d2d2d2;
+    font-size: 1.1rem;
+    line-height: 1.7;
+    max-width: 520px;
+  }
+
+  /* Buttons */
+  .buttons {
+    display: flex;
+    gap: 1rem;
+  }
+
+  .play-btn,
+  .info-btn {
     display: flex;
     align-items: center;
+    justify-content: center;
+    gap: 0.8rem;
 
-    background:
-      linear-gradient(
-        to right,
-        rgba(0,0,0,.9),
-        rgba(0,0,0,.55),
-        rgba(0,0,0,.15)
-      ),
-      url("https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=1920")
-      center center/cover no-repeat;
-  }
+    padding: 0.95rem 2rem;
 
-  .content {
-    width: 600px;
-    margin-left: 5rem;
-    color: white;
-  }
-
-  .content h1 {
-    font-size: 4rem;
-    margin-bottom: 1rem;
-    line-height: 1.1;
-  }
-
-  .content p {
-    font-size: 1.2rem;
-    color: #d1d1d1;
-    line-height: 1.6;
-    margin-bottom: 2rem;
-  }
-
-  .content button {
-    padding: 0.9rem 2rem;
     border: none;
-    border-radius: 6px;
-
-    background: #e50914;
-    color: white;
+    border-radius: 4px;
 
     font-size: 1rem;
-    font-weight: 600;
+    font-weight: 700;
 
     cursor: pointer;
-    transition: 0.3s;
+
+    transition: all 0.25s ease;
   }
 
-  .content button:hover {
-    background: #b20710;
+  .play-btn {
+    background: #fff;
+    color: #000;
+  }
+
+  .play-btn:hover {
+    background: rgb(220,220,220);
+    transform: scale(1.05);
+  }
+
+  .info-btn {
+    background: rgba(109,109,110,.75);
+    color: #fff;
+  }
+
+  .info-btn:hover {
+    background: rgba(109,109,110,.55);
+    transform: scale(1.05);
+  }
+
+  .icon {
+    font-size: 1.25rem;
+  }
+
+  /* Responsive */
+  @media (max-width: 992px) {
+    .content {
+      left: 3rem;
+      top: 55%;
+    }
+
+    .title-image {
+      width: 320px;
+    }
+
+    .description {
+      font-size: 1rem;
+      max-width: 420px;
+    }
   }
 
   @media (max-width: 768px) {
-    .hero {
-      padding: 5rem 2rem 0;
-    }
-
     .content {
-      margin-left: 0;
-      width: 100%;
+      left: 2rem;
+      top: 52%;
+      max-width: 85%;
     }
 
-    .content h1 {
-      font-size: 2.5rem;
+    .title-image {
+      width: 240px;
     }
 
-    .content p {
-      font-size: 1rem;
+    .description {
+      font-size: 0.95rem;
+      max-width: 100%;
     }
+
+    .buttons {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .play-btn,
+    .info-btn {
+      width: 220px;
+    }
+      
   }
 `;
-

@@ -29,7 +29,7 @@ export default function Login() {
         password
       );
 
-      toast.success("Login Successful 🎉");
+      toast.success("Login Successful");
 
       setTimeout(() => {
         navigate("/");
