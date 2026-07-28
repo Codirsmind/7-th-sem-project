@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import styled from "styled-components";
 import backgroundImage from "../assets/home.png";
@@ -9,6 +10,7 @@ import { AiOutlineInfoCircle } from "react-icons/ai";
 export default function Streamify() {
 
   const [isScrolled, setScrolled] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -41,7 +43,7 @@ export default function Streamify() {
             />
 
             <div className="buttons">
-              <button className="play-btn">
+              <button className="play-btn" onClick={()=> navigate("/player")}>
                 <FaPlay className="icon" />
                 Watch Now
               </button>
