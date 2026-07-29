@@ -6,11 +6,18 @@ import backgroundImage from "../assets/home.png";
 import titleImage from "../assets/title.png";
 import { FaPlay } from "react-icons/fa";
 import { AiOutlineInfoCircle } from "react-icons/ai";
+import { useDispatch } from "react-redux";
+import { getGenres } from "../store";
 
 export default function Streamify() {
 
   const [isScrolled, setScrolled] = useState(false);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  useEffect(()=>{
+    dispatch(getGenres());
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {

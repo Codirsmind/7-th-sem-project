@@ -3,16 +3,29 @@ import { toast } from "react-toastify";
 import styled from "styled-components";
 import BackgroundImage from "../components/BackgroundImage";
 import Header from "../components/Header";
-import { signInWithEmailAndPassword, onAuthStateChanged } from "firebase/auth"
+import { signInWithEmailAndPassword, reload, signOut, onAuthStateChanged } from "firebase/auth"
 import { firebaseAuth } from "../utils/firebase-config";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [formValues, setFormValues] = useState({
     email: "",
     password: "",
   });
+
+  useEffect(() => {
+    if (location.state?.verificationEmailSent) {
+      toast.success(
+        "Verification email sent. Please check your inbox and verify your email before logging in.",
+        {
+          toastId: "verification-email",
+        }
+      );
+      navigate(location.pathname, { replace: true, state: null });
+    }
+  }, [location, navigate]);
 
   const handleLogin = async () => {
     const { email, password } = formValues;
@@ -23,17 +36,20 @@ export default function Login() {
     }
 
     try {
-      await signInWithEmailAndPassword(
+      const userCredential = await signInWithEmailAndPassword(
         firebaseAuth,
         email,
         password
       );
 
-      toast.success("Login Successful");
+      await reload(userCredential.user);
 
-      setTimeout(() => {
-        navigate("/");
-      }, 1500);
+      if (!userCredential.user.emailVerified) {
+        await signOut(firebaseAuth);
+        return;
+      }
+      toast.success("Login successful!")
+      navigate("/");
     } catch (error) {
       console.error(error);
 
@@ -68,16 +84,6 @@ export default function Login() {
       }
     }
   };
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(firebaseAuth, (currentUser) => {
-      if (currentUser) {
-        navigate("/");
-      }
-    });
-
-    return () => unsubscribe();
-  }, [navigate]);
 
   return (
     <Container>

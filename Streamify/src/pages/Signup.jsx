@@ -3,7 +3,7 @@ import { toast } from "react-toastify";
 import styled from "styled-components";
 import BackgroundImage from "../components/BackgroundImage";
 import Header from "../components/Header";
-import {createUserWithEmailAndPassword, onAuthStateChanged} from "firebase/auth"
+import { createUserWithEmailAndPassword, sendEmailVerification, signOut, reload, onAuthStateChanged } from "firebase/auth"
 import { firebaseAuth } from "../utils/firebase-config";
 import { useNavigate } from "react-router-dom";
 
@@ -11,70 +11,61 @@ export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const [formValues, setFormValues] = useState({
-    email:"",
-    password:"",
+    email: "",
+    password: "",
   });
 
   const handleSignUp = async () => {
-  if (!showPassword) {
-    setShowPassword(true);
-    return;
-  }
-
-  const { email, password } = formValues;
-
-  if (!email || !password) {
-    toast.error("Please enter both email and password.");
-    return;
-  }
-
- try {
-  await createUserWithEmailAndPassword(
-    firebaseAuth,
-    email,
-    password
-  );
-
-  toast.success("Account created successfully!", {
-    autoClose: 1500,
-    onClose: () => navigate("/"),
-  });
-
-} catch (error) {
-  console.error(error);
-
-  switch (error.code) {
-    case "auth/email-already-in-use":
-      toast.error("An account with this email already exists.");
-      break;
-
-    case "auth/invalid-email":
-      toast.error("Please enter a valid email address.");
-      break;
-
-    case "auth/weak-password":
-      toast.error("Password must be at least 6 characters long.");
-      break;
-
-    case "auth/network-request-failed":
-      toast.error("Network error. Please check your internet connection.");
-      break;
-
-    default:
-      toast.error("Unable to create your account. Please try again.");
-  }
-}
-};
-
-useEffect(() => {
-  const unsubscribe = onAuthStateChanged(firebaseAuth, (currentUser) => {
-    if (currentUser) {
-      navigate("/");
+    if (!showPassword) {
+      setShowPassword(true);
+      return;
     }
-  });
 
-  return () => unsubscribe();
-}, [navigate]);
+    const { email, password } = formValues;
+
+    if (!email || !password) {
+      toast.error("Please enter both email and password.");
+      return;
+    }
+
+    try {
+      const userCredential = await createUserWithEmailAndPassword(
+        firebaseAuth,
+        email,
+        password
+      );
+      await sendEmailVerification(userCredential.user);
+      await signOut(firebaseAuth);
+      navigate("/login", {
+        state: { verificationEmailSent: true },
+      });
+
+    } catch (error) {
+      console.error(error);
+
+      switch (error.code) {
+        case "auth/email-already-in-use":
+          toast.error("An account with this email already exists.");
+          break;
+
+        case "auth/invalid-email":
+          toast.error("Please enter a valid email address.");
+          break;
+
+        case "auth/weak-password":
+          toast.error("Password must be at least 6 characters long.");
+          break;
+
+        case "auth/network-request-failed":
+          toast.error("Network error. Please check your internet connection.");
+          break;
+
+        default:
+          toast.error("Unable to create your account. Please try again.");
+      }
+    }
+  };
+
 
   return (
     <Container>
@@ -100,7 +91,7 @@ useEffect(() => {
             placeholder="Email Address"
             name="email"
             value={formValues.email}
-            onChange={(e)=>setFormValues({...formValues,[e.target.name]:e.target.value})}
+            onChange={(e) => setFormValues({ ...formValues, [e.target.name]: e.target.value })}
           />
 
           {showPassword && (
@@ -109,7 +100,7 @@ useEffect(() => {
               placeholder="Password"
               name="password"
               value={formValues.password}
-              onChange={(e)=>setFormValues({...formValues,[e.target.name]:e.target.value})}
+              onChange={(e) => setFormValues({ ...formValues, [e.target.name]: e.target.value })}
             />
           )}
 
