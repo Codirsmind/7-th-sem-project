@@ -6,18 +6,25 @@ import backgroundImage from "../assets/home.png";
 import titleImage from "../assets/title.png";
 import { FaPlay } from "react-icons/fa";
 import { AiOutlineInfoCircle } from "react-icons/ai";
-import { useDispatch } from "react-redux";
-import { getGenres } from "../store";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchMovies, getGenres } from "../store";
+import Slider from "../components/Slider";
 
 export default function Streamify() {
 
   const [isScrolled, setScrolled] = useState(false);
   const navigate = useNavigate();
+  const genresLoaded = useSelector((state)=> state.streamify.genresLoaded);
+  const movies = useSelector((state)=> state.streamify.movies);
   const dispatch = useDispatch();
 
   useEffect(()=>{
     dispatch(getGenres());
   }, []);
+
+  useEffect(() =>{
+    if (genresLoaded) dispatch(fetchMovies({ type : "all", time: "day"}));
+  });
 
   useEffect(() => {
     const handleScroll = () => {
@@ -63,6 +70,7 @@ export default function Streamify() {
           </div>
         </div>
       </main>
+      <Slider movies={movies} />
       {/* Temporary section so the page can scroll */}
       <section className="movies"></section>
     </Container>

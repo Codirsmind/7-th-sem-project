@@ -46,9 +46,21 @@ export default function Login() {
 
       if (!userCredential.user.emailVerified) {
         await signOut(firebaseAuth);
+
+        toast.error(
+          "Please verify your email before logging in.",
+          {
+            toastId: "email-not-verified",
+          }
+        );
+
         return;
       }
-      toast.success("Login successful!")
+
+      toast.success("Login successful!", {
+        toastId: "login-success",
+      });
+
       navigate("/");
     } catch (error) {
       console.error(error);
