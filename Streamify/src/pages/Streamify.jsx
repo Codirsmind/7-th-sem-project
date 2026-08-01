@@ -71,8 +71,6 @@ export default function Streamify() {
         </div>
       </main>
       <Slider movies={movies} />
-      {/* Temporary section so the page can scroll */}
-      <section className="movies"></section>
     </Container>
   );
 }
