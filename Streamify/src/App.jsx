@@ -25,7 +25,7 @@ function App() {
         <Route path="/" element={<Streamify />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<Login />} />
-        <Route path="player" element={<Player/>}/>
+        <Route path="/player" element={<Player/>}/>
       </Routes>
     </BrowserRouter>
 

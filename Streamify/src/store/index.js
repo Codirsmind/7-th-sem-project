@@ -38,9 +38,27 @@ const createArrayFromRawData = (array, moviesArray, genres) => {
     ) {
       moviesArray.push({
         id: movie.id,
-        name: movie.original_name || movie.original_title,
+
+        name: movie.original_title || movie.original_name,
+
         image: movie.poster_path,
-        backdrop: movie.backdrop_path, 
+
+        backdrop: movie.backdrop_path,
+
+        overview: movie.overview,
+
+        releaseDate: movie.release_date || movie.first_air_date,
+
+        rating: movie.vote_average,
+
+        votes: movie.vote_count,
+
+        language: movie.original_language,
+
+        popularity: movie.popularity,
+
+        adult: movie.adult,
+
         genres: movieGenres.slice(0, 3),
       });
     }
@@ -49,7 +67,7 @@ const createArrayFromRawData = (array, moviesArray, genres) => {
 
 const getRawData = async (api, genres, paging) => {
     const moviesArray = [];
-    for (let i = 1; moviesArray.length < 60 && i <= 10; i++) {
+    for (let i = 1; moviesArray.length < 120 && i <= 20; i++) {
         const { data } = await axios.get(
             `${api}${paging ? `&page=${i}` : ""}`
         );
@@ -72,7 +90,7 @@ export const fetchMovies = createAsyncThunk(
         return data;
     }
 );
-// return getRawData(`${TMDB_BASE_URL}/discover/${type}?api_key=${API_KEY}&with_genre=${genre}`)
+
 
 const StreamifySlice = createSlice({
     name: "Streamify",

@@ -4,37 +4,41 @@ import styled from "styled-components";
 import { useRef } from "react";
 import { AiOutlineLeft, AiOutlineRight } from "react-icons/ai";
 
-export default function CardSlider({ data, title }) {
+export default React.memo(function CardSlider({ data, title }) {
   const [showControls, setShowControls] = useState(false);
   const [sliderPosition, setSliderPosition] = useState(0);
-  const listRef = useRef();
 
-  const handleDirection = (direction) => {
-  const cardWidth = 177; 
+  const listRef = useRef(null);
+
+  const cardWidth = 179; // card width + gap
   const visibleCards = 8;
 
-  if (direction === "left") {
-    listRef.current.scrollBy({
-      left: -cardWidth,
-      behavior: "smooth",
-    });
+  const handleDirection = (direction) => {
+    if (!listRef.current) return;
 
-    if (sliderPosition > 0) {
-      setSliderPosition(sliderPosition - 1);
+    if (direction === "left" && sliderPosition > 0) {
+      const newPosition = sliderPosition - 1;
+
+      setSliderPosition(newPosition);
+
+      listRef.current.style.transform = `translateX(-${
+        newPosition * cardWidth
+      }px)`;
     }
-  }
 
-  if (direction === "right") {
-    listRef.current.scrollBy({
-      left: cardWidth,
-      behavior: "smooth",
-    });
+    if (
+      direction === "right" &&
+      sliderPosition < data.length - visibleCards
+    ) {
+      const newPosition = sliderPosition + 1;
 
-    if (sliderPosition < data.length - visibleCards) {
-      setSliderPosition(sliderPosition + 1);
+      setSliderPosition(newPosition);
+
+      listRef.current.style.transform = `translateX(-${
+        newPosition * cardWidth
+      }px)`;
     }
-  }
-};
+  };
 
   return (
     <Container
@@ -53,11 +57,10 @@ export default function CardSlider({ data, title }) {
 
         <div className="slider-container">
           <div className="slider" ref={listRef}>
-            {data.map((movie, index) => (
+            {data.map((movie) => (
               <Card
                 key={movie.id}
                 movieData={movie}
-                index={index}
               />
             ))}
           </div>
@@ -72,19 +75,24 @@ export default function CardSlider({ data, title }) {
       </div>
     </Container>
   );
-}
+})
 
 
 const Container = styled.div`
   position: relative;
-  margin: 0.8rem 0;
+  margin: 0.15rem 0;
   overflow: visible;
+  z-index: 1;
+
+  &:hover {
+    z-index: 99999;
+  }
 
   .title {
     color: #fff;
     font-size: 1.5rem;
     font-weight: 700;
-    margin: 0 0 0.6rem 3rem;
+    margin: 0 0 0.35rem 1.8rem;
     letter-spacing: 0.4px;
   }
 
@@ -92,13 +100,18 @@ const Container = styled.div`
     position: relative;
     width: 100%;
     overflow: visible;
+    z-index: 1;
+  }
+
+  .wrapper:hover {
+    z-index: 99999;
   }
 
   .slider-container {
     position: relative;
     width: 100%;
     overflow: visible;
-    padding: 0.75rem 3rem;
+    padding: 0.3rem 1rem;
   }
 
   .slider {
@@ -106,10 +119,12 @@ const Container = styled.div`
     align-items: center;
     gap: 14px;
 
-    overflow: visible;
+    width: max-content;
 
-    transition: transform 0.6s ease;
+    transition: transform 0.55s ease;
     will-change: transform;
+
+    overflow: visible;
   }
 
   .slider-action {
@@ -117,8 +132,8 @@ const Container = styled.div`
     top: 50%;
     transform: translateY(-50%);
 
-    width: 50px;
-    height: 50px;
+    width: 52px;
+    height: 52px;
 
     display: flex;
     justify-content: center;
@@ -126,38 +141,38 @@ const Container = styled.div`
 
     border: none;
     border-radius: 50%;
+
+    background: rgba(20, 20, 20, 0.75);
+    color: #fff;
+
     cursor: pointer;
 
-    background: rgba(0, 0, 0, 0.7);
-    color: white;
-
-    font-size: 1.8rem;
-
-    z-index: 999999;
+    z-index: 100000;
 
     transition: all 0.25s ease;
+  }
 
-    svg {
-      transition: 0.25s;
-    }
+  .slider-action:hover {
+    background: #fff;
+    color: #000;
+    transform: translateY(-50%) scale(1.08);
+  }
 
-    &:hover {
-      background: white;
-      color: black;
-      transform: translateY(-50%) scale(1.08);
-    }
+  .slider-action svg {
+    font-size: 1.8rem;
+    transition: transform 0.25s ease;
+  }
 
-    &:hover svg {
-      transform: scale(1.2);
-    }
+  .slider-action:hover svg {
+    transform: scale(1.15);
   }
 
   .left {
-    left: 12px;
+    left: 8px;
   }
 
   .right {
-    right: 12px;
+    right: 8px;
   }
 
   .hide {
@@ -166,35 +181,35 @@ const Container = styled.div`
   }
 
   @media (max-width: 1024px) {
-    margin: 0.7rem 0;
-
     .title {
-      margin-left: 2rem;
+      margin-left: 1.5rem;
       font-size: 1.3rem;
     }
 
     .slider-container {
-      padding: 0.75rem 2rem;
+      padding: 0.3rem 1rem;
     }
 
     .slider-action {
-      width: 42px;
-      height: 42px;
+      width: 44px;
+      height: 44px;
+    }
+
+    .slider-action svg {
       font-size: 1.5rem;
     }
   }
 
   @media (max-width: 768px) {
-    margin: 0.5rem 0;
+    margin: 0;
 
     .title {
       margin-left: 1rem;
-      margin-bottom: 0.5rem;
       font-size: 1.1rem;
     }
 
     .slider-container {
-      padding: 0.5rem 1rem;
+      padding: 0.2rem 1rem;
     }
 
     .slider {
@@ -204,15 +219,18 @@ const Container = styled.div`
     .slider-action {
       width: 36px;
       height: 36px;
+    }
+
+    .slider-action svg {
       font-size: 1.2rem;
     }
 
     .left {
-      left: 5px;
+      left: 4px;
     }
 
     .right {
-      right: 5px;
+      right: 4px;
     }
   }
 `;

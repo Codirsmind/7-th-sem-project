@@ -9,21 +9,22 @@ import { AiOutlineInfoCircle } from "react-icons/ai";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchMovies, getGenres } from "../store";
 import Slider from "../components/Slider";
+import Footer from "../components/Footer";
 
 export default function Streamify() {
 
   const [isScrolled, setScrolled] = useState(false);
   const navigate = useNavigate();
-  const genresLoaded = useSelector((state)=> state.streamify.genresLoaded);
-  const movies = useSelector((state)=> state.streamify.movies);
+  const genresLoaded = useSelector((state) => state.streamify.genresLoaded);
+  const movies = useSelector((state) => state.streamify.movies);
   const dispatch = useDispatch();
 
-  useEffect(()=>{
+  useEffect(() => {
     dispatch(getGenres());
   }, []);
 
-  useEffect(() =>{
-    if (genresLoaded) dispatch(fetchMovies({ type : "all", time: "day"}));
+  useEffect(() => {
+    if (genresLoaded) dispatch(fetchMovies({ type: "all", time: "day" }));
   });
 
   useEffect(() => {
@@ -57,7 +58,7 @@ export default function Streamify() {
             />
 
             <div className="buttons">
-              <button className="play-btn" onClick={()=> navigate("/player")}>
+              <button className="play-btn" onClick={() => navigate("/player")}>
                 <FaPlay className="icon" />
                 Watch Now
               </button>
@@ -70,7 +71,11 @@ export default function Streamify() {
           </div>
         </div>
       </main>
-      <Slider movies={movies} />
+      <div>
+        <Slider movies={movies} />
+      <Footer />
+      </div>
+      
     </Container>
   );
 }
