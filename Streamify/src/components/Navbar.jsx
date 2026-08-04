@@ -10,8 +10,9 @@ import { firebaseAuth } from "../utils/firebase-config";
 export default function Navbar({ isScrolled }) {
   const links = [
     { name: "Home", link: "/" },
-    { name: "TV Shows", link: "/tv" },
     { name: "Movies", link: "/movies" },
+    { name: "TV Shows", link: "/tv" },
+    { name: "Anime", link: "/anime" },
     { name: "My List", link: "/mylist" },
   ];
 

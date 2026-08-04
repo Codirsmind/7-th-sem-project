@@ -7,87 +7,156 @@ import { API_KEY, TMDB_BASE_URL } from "../Utils/constants";
 import axios from "axios";
 
 const initialState = {
-    movies: [],
+    genres: {},
     genresLoaded: false,
-    genres: [],
 
+    home: {},
+
+    movies: {},
+
+    tv: {},
+
+    anime: {},
 };
 
 export const getGenres = createAsyncThunk(
     "streamify/genres",
     async () => {
-        const { data } = await axios.get(
-            `${TMDB_BASE_URL}/genre/movie/list?api_key=${API_KEY}`
-        );
-        return data.genres;
+        const [movieRes, tvRes] = await Promise.all([
+            axios.get(`${TMDB_BASE_URL}/genre/movie/list?api_key=${API_KEY}`),
+            axios.get(`${TMDB_BASE_URL}/genre/tv/list?api_key=${API_KEY}`),
+        ]);
+
+        const genreMap = {};
+
+        [...movieRes.data.genres, ...tvRes.data.genres].forEach((genre) => {
+            genreMap[genre.id] = genre.name;
+        });
+
+        return genreMap;
     }
 );
 
-const createArrayFromRawData = (array, moviesArray, genres) => {
-  array.forEach((movie) => {
-    const movieGenres = [];
+const createArrayFromRawData = (array, mediaArray, genres) => {
+    array.forEach((item) => {
+        const itemGenres =
+            item.genre_ids
+                ?.map((genreId) => genres[genreId])
+                .filter(Boolean) || [];
 
-    movie.genre_ids.forEach((genre) => {
-      const name = genres.find(({ id }) => id === genre);
-      if (name) movieGenres.push(name.name);
+        if (
+            item.poster_path &&
+            !mediaArray.some((media) => media.id === item.id)
+        ) {
+            mediaArray.push({
+                id: item.id,
+
+                mediaType:
+                    item.media_type || (item.first_air_date ? "tv" : "movie"),
+
+                name:
+                    item.title ||
+                    item.original_title ||
+                    item.name ||
+                    item.original_name,
+
+                image: item.poster_path,
+
+                backdrop: item.backdrop_path,
+
+                overview: item.overview,
+
+                releaseDate:
+                    item.release_date || item.first_air_date,
+
+                rating: item.vote_average,
+
+                votes: item.vote_count,
+
+                popularity: item.popularity,
+
+                language: item.original_language,
+
+                adult: item.adult,
+
+                genres: itemGenres,
+
+                genreIds: item.genre_ids || [],
+
+                originCountry: item.origin_country || [],
+
+                originalName: item.original_name,
+
+                originalTitle: item.original_title,
+            });
+        }
     });
+};
 
-    if (
-      movie.poster_path &&
-      !moviesArray.some((m) => m.id === movie.id)
+const getRawData = async (
+    api,
+    genres,
+    paging = true,
+    maxItems = 120,
+    maxPages = 20
+) => {
+    const mediaArray = [];
+
+    for (
+        let page = 1;
+        mediaArray.length < maxItems && page <= maxPages;
+        page++
     ) {
-      moviesArray.push({
-        id: movie.id,
+        try {
+            const { data } = await axios.get(
+                `${api}${paging ? `&page=${page}` : ""}`
+            );
 
-        name: movie.original_title || movie.original_name,
+            createArrayFromRawData(
+                data.results || [],
+                mediaArray,
+                genres
+            );
 
-        image: movie.poster_path,
+            if (!data.results?.length) break;
 
-        backdrop: movie.backdrop_path,
-
-        overview: movie.overview,
-
-        releaseDate: movie.release_date || movie.first_air_date,
-
-        rating: movie.vote_average,
-
-        votes: movie.vote_count,
-
-        language: movie.original_language,
-
-        popularity: movie.popularity,
-
-        adult: movie.adult,
-
-        genres: movieGenres.slice(0, 3),
-      });
+        } catch (error) {
+            console.error("TMDB Error:", error);
+            break;
+        }
     }
-  });
+
+    return mediaArray;
 };
 
-const getRawData = async (api, genres, paging) => {
-    const moviesArray = [];
-    for (let i = 1; moviesArray.length < 120 && i <= 20; i++) {
-        const { data } = await axios.get(
-            `${api}${paging ? `&page=${i}` : ""}`
-        );
-        createArrayFromRawData(data.results, moviesArray, genres);
-    }
-    return moviesArray;
-};
-
-export const fetchMovies = createAsyncThunk(
-    "streamify/trending",
-    async ({ type, time }, thunkAPI) => {
+export const fetchCategory = createAsyncThunk(
+    "streamify/fetchCategory",
+    async (
+        {
+            page,
+            category,
+            endpoint,
+            paging = true,
+            maxItems = 120,
+            maxPages = 20,
+        },
+        thunkAPI
+    ) => {
         const {
             streamify: { genres },
         } = thunkAPI.getState();
+
+        const separator = endpoint.includes("?") ? "&" : "?";
+
         const data = await getRawData(
-            `${TMDB_BASE_URL}/trending/${type}/${time}?api_key=${API_KEY}`,
+            `${TMDB_BASE_URL}${endpoint}${separator}api_key=${API_KEY}`,
             genres,
-            true
-        );    
-        return data;
+            paging,
+            maxItems,
+            maxPages
+        );
+
+        return { page, category, data };
     }
 );
 
@@ -100,8 +169,14 @@ const StreamifySlice = createSlice({
             state.genres = action.payload;
             state.genresLoaded = true;
         });
-        builder.addCase(fetchMovies.fulfilled, (state, action) => {
-            state.movies = action.payload;
+        builder.addCase(fetchCategory.fulfilled, (state, action) => {
+            const { page, category, data } = action.payload;
+
+            if (!state[page]) {
+                state[page] = {};
+            }
+
+            state[page][category] = data;
         });
     },
 });

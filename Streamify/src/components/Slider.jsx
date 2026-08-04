@@ -2,26 +2,19 @@ import React from "react";
 import CardSlider from "./CardSlider";
 import styled from "styled-components";
 
-export default function Slider({movies}) {
-
-    const getMoviesFromRange = (from, to) => {
-        return movies.slice(from, to);
-    }
-
-    return (
-        <Container>
-            <CardSlider title="Trending Now" data={getMoviesFromRange(0, 20)} />
-            <CardSlider title="New Releases" data={getMoviesFromRange(20, 40)} />
-            <CardSlider title="Blockbuster Movies" data={getMoviesFromRange(40, 60)} />
-            <CardSlider title="Popular on Streamify" data={getMoviesFromRange(60, 80)} />
-            <CardSlider title="Action Movies" data={getMoviesFromRange(80, 100)} />
-            <CardSlider title="Epics" data={getMoviesFromRange(100, 120)} />
-        </Container>
-    )
+export default function Slider({ sections }) {
+  return (
+    <Container>
+      {sections.map((section) => (
+        <CardSlider
+          key={section.title}
+          title={section.title}
+          data={(section.data || []).slice(0, 20)}
+        />
+      ))}
+    </Container>
+  );
 }
-
-
-
 
 const Container = styled.div`
   position: relative;
@@ -35,7 +28,6 @@ const Container = styled.div`
   padding: 0 0 2rem;
 
   overflow: visible;
-
   z-index: 1;
 
   @media (max-width: 1024px) {
@@ -47,4 +39,3 @@ const Container = styled.div`
     padding-bottom: 1rem;
   }
 `;
-

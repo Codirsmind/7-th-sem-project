@@ -57,7 +57,7 @@ export default React.memo(function CardSlider({ data, title }) {
 
         <div className="slider-container">
           <div className="slider" ref={listRef}>
-            {data.map((movie) => (
+            {data?.map((movie) => (
               <Card
                 key={movie.id}
                 movieData={movie}
