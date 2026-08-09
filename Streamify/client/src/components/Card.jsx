@@ -7,11 +7,64 @@ import { RiThumbUpFill, RiThumbDownFill } from "react-icons/ri";
 import { BsCheck } from "react-icons/bs";
 import { AiOutlinePlus } from "react-icons/ai";
 import { BiChevronDown } from "react-icons/bi";
+import axios from "axios";
+import { toast } from "react-toastify";
+import { firebaseAuth } from "../Utils/firebase-config";
+import { requireAuth } from "../Utils/requireAuth";
 
 export default React.memo(function Card({ movieData, isLiked = false }) {
   const [isHovered, setIsHovered] = useState(false);
+  const [isInWatchlist, setIsInWatchlist] = useState(isLiked);
   const navigate = useNavigate();
   const [showFullOverview, setShowFullOverview] = useState(false);
+
+  //add to watchlist
+  const handleWatchlist = async () => {
+    try {
+      const user = firebaseAuth.currentUser;
+      if (!requireAuth(navigate)) return;
+
+      // REMOVE
+      if (isInWatchlist) {
+        await axios.delete(
+          `http://localhost:8080/api/watchlist/${user.uid}/${movieData.id}/${movieData.mediaType}`
+        );
+
+        setIsInWatchlist(false);
+
+        toast.success("Removed from your watchlist.");
+        return;
+      }
+
+      // ADD
+      await axios.post("http://localhost:8080/api/watchlist", {
+        userId: user.uid,
+        movieId: movieData.id,
+        mediaType: movieData.mediaType,
+        name: movieData.name,
+        image: movieData.image,
+        backdrop: movieData.backdrop,
+        overview: movieData.overview,
+        rating: movieData.rating,
+        releaseDate: movieData.releaseDate,
+        genres: movieData.genres,
+      });
+
+      setIsInWatchlist(true);
+
+      toast.success("Added to your watchlist.");
+
+    } catch (error) {
+      console.error("Watchlist error:", error);
+
+      if (error.response?.status === 409) {
+        setIsInWatchlist(true);
+        toast.info("Already in your watchlist.");
+      } else {
+        toast.error("Unable to update your watchlist.");
+      }
+    }
+  };
 
   return (
     <Container
@@ -40,14 +93,20 @@ export default React.memo(function Card({ movieData, isLiked = false }) {
               autoPlay
               muted
               loop
-              onClick={() => navigate("/player")}
+              onClick={() => {
+                if (!requireAuth(navigate)) return;
+                navigate("/player")
+              }}
             />
           </div>
 
           <div className="movie-details">
             <h3
               className="movie-title"
-              onClick={() => navigate("/player")}
+              onClick={() => {
+                if (!requireAuth(navigate)) return;
+                navigate("/player")
+              }}
             >
               {movieData.name}
             </h3>
@@ -70,28 +129,39 @@ export default React.memo(function Card({ movieData, isLiked = false }) {
               <IoPlayCircleSharp
                 className="icon play"
                 title="Play"
-                onClick={() => navigate("/player")}
+                onClick={() => {
+                  if (!requireAuth(navigate)) return;
+                  navigate("/player")
+                }}
               />
 
               <RiThumbUpFill
                 className="icon"
                 title="Like"
+                onClick={() => {
+                  if (!requireAuth(navigate)) return;
+                }}
               />
 
               <RiThumbDownFill
                 className="icon"
                 title="Dislike"
+                onClick={() => {
+                  if (!requireAuth(navigate)) return;
+                }}
               />
 
-              {isLiked ? (
+              {isInWatchlist ? (
                 <BsCheck
                   className="icon"
                   title="Remove From List"
+                  onClick={handleWatchlist}
                 />
               ) : (
                 <AiOutlinePlus
                   className="icon"
                   title="Add To My List"
+                  onClick={handleWatchlist}
                 />
               )}
             </div>

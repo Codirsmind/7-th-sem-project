@@ -13,7 +13,7 @@ export default function Navbar({ isScrolled }) {
     { name: "Movies", link: "/movies" },
     { name: "TV Shows", link: "/tv" },
     { name: "Anime", link: "/anime" },
-    { name: "My List", link: "/mylist" },
+    { name: "Watch List", link: "/watchlist" },
   ];
 
   const [showSearch, setShoweSearch] = useState(false);

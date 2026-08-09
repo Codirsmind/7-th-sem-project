@@ -6,7 +6,7 @@ import Header from "../components/Header";
 import { signInWithEmailAndPassword, reload, signOut, onAuthStateChanged } from "firebase/auth"
 import { firebaseAuth } from "../utils/firebase-config";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import axios from "axios";
+
 
 export default function Login() {
   const navigate = useNavigate();
@@ -57,13 +57,6 @@ export default function Login() {
 
         return;
       }
-
-      await axios.post("http://localhost:8080/api/users", {
-        firebaseUid: userCredential.user.uid,
-        name,
-        email: userCredential.user.email,
-      });
-
       toast.success("Login successful!", {
         toastId: "login-success",
       });

@@ -7,6 +7,8 @@ import Home from "./pages/Home";
 import Movies from "./pages/Movies";
 import TVShows from "./pages/TVShows";
 import Anime from "./pages/Anime";
+import Watchlist from "./pages/Watchlist";
+
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "./toast.css";
@@ -31,6 +33,7 @@ function App() {
         <Route path="/movies" element={<Movies/>}/>
         <Route path="/tv" element={<TVShows />} />
         <Route path="/anime" element={<Anime />} />
+        <Route path="/watchlist" element={<Watchlist />} />
         <Route path="/player" element={<Player/>}/>
       </Routes>
     </BrowserRouter>

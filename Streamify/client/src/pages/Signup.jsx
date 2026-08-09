@@ -6,6 +6,7 @@ import Header from "../components/Header";
 import { createUserWithEmailAndPassword, sendEmailVerification, signOut, reload, onAuthStateChanged } from "firebase/auth"
 import { firebaseAuth } from "../utils/firebase-config";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 
 export default function Signup() {
@@ -43,6 +44,12 @@ export default function Signup() {
         email,
         password
       );
+      
+      await axios.post("http://localhost:8080/api/users", {
+              firebaseUid: userCredential.user.uid,
+              name,
+              email: userCredential.user.email,
+            });
 
       await sendEmailVerification(userCredential.user);
 
