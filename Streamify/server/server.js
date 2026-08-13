@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import mongoose from "mongoose";
 import userRoutes from "./routes/users.js";
 import watchlistRoutes from "./routes/watchlist.js";
+import dns from "dns";
 
 const app = express();
 
@@ -13,6 +14,8 @@ app.use("/api/users", userRoutes);
 app.use("/api/watchlist", watchlistRoutes);
 
 dotenv.config();
+
+dns.setServers(["8.8.8.8", "8.8.4.4"]);
 
 mongoose
   .connect(process.env.MONGODB_URI)

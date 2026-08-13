@@ -24,7 +24,7 @@ export default function Watchlist() {
 
             try {
                 const response = await axios.get(
-                    `http://localhost:8080/api/watchlist/${user.uid}`
+                    `${import.meta.env.VITE_API_URL}/api/watchlist/${user.uid}`
                 );
 
                 setWatchlist(response.data);
@@ -90,7 +90,7 @@ export default function Watchlist() {
 
                     <button onClick={() => {
                         if (!requireAuth(navigate)) return;
-                         navigate("/player")
+                         navigate("/")
                     }}>
                         Browse Movies
                     </button>

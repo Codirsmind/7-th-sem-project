@@ -2,26 +2,30 @@ import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import Navbar from "../components/Navbar";
 import Slider from "../components/Slider";
-import backgroundImage from "../assets/home.png";
-import titleImage from "../assets/title.png";
-import { FaPlay } from "react-icons/fa";
-import { AiOutlineInfoCircle } from "react-icons/ai";
 import { getGenres, fetchCategory } from "../store";
 import styled from "styled-components";
 import Footer from "../components/Footer";
-import { useNavigate } from "react-router-dom";
-import { requireAuth } from "../Utils/requireAuth";
+import Hero from "../components/Hero";
+
 
 export default function Home() {
   const [isScrolled, setScrolled] = useState(false);
   const dispatch = useDispatch();
-  const navigate = useNavigate();
-
   const genresLoaded = useSelector(
     (state) => state.streamify.genresLoaded
   );
 
-  const home = useSelector((state) => state.streamify.home);
+ const home = useSelector((state) => state.streamify.home) || {};
+ const heroItems = [
+  ...(home.trending || []),
+  ...(home.nowPlaying || []),
+  ...(home.popularMovies || []),
+  ...(home.popularTV || []),
+  ...(home.topRatedMovies || []),
+  ...(home.topRatedTV || []),
+  ...(home.actionMovies || []),
+  ...(home.anime || []),
+];
 
   useEffect(() => {
     dispatch(getGenres());
@@ -90,82 +94,52 @@ export default function Home() {
       window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  return (
-    <Container>
-      <Navbar isScrolled={isScrolled} />
+ return (
+  <Container>
+    <Navbar isScrolled={isScrolled} />
 
-      <main className="hero">
-        <img src={backgroundImage} alt="" className="hero-image" />
+    <Hero items={heroItems} />
 
-        <div className="overlay"></div>
+    <Slider
+      sections={[
+        {
+          title: "Trending Now",
+          data: home.trending || [],
+        },
+        {
+          title: "New Releases",
+          data: home.nowPlaying || [],
+        },
+        {
+          title: "Popular Movies",
+          data: home.popularMovies || [],
+        },
+        {
+          title: "Popular TV Shows",
+          data: home.popularTV || [],
+        },
+        {
+          title: "Top Rated Movies",
+          data: home.topRatedMovies || [],
+        },
+        {
+          title: "Top Rated TV Shows",
+          data: home.topRatedTV || [],
+        },
+        {
+          title: "Action Movies",
+          data: home.actionMovies || [],
+        },
+        {
+          title: "Anime",
+          data: home.anime || [],
+        },
+      ]}
+    />
 
-        <div className="content">
-          <div className="hero-content">
-            <img
-              src={titleImage}
-              alt="Movie Title"
-              className="title-image"
-            />
-
-            <div className="buttons">
-              <button className="play-btn" onClick={() => {
-                if (!requireAuth(navigate)) return;
-                navigate("/player")
-              }}>
-                <FaPlay className="icon" />
-                Watch Now
-              </button>
-
-              <button className="info-btn">
-                <AiOutlineInfoCircle className="icon" />
-                More Info
-              </button>
-            </div>
-          </div>
-        </div>
-      </main>
-      <div>
-        <Slider
-          sections={[
-            {
-              title: "Trending Now",
-              data: home.trending || [],
-            },
-            {
-              title: "New Releases",
-              data: home.nowPlaying || [],
-            },
-            {
-              title: "Popular Movies",
-              data: home.popularMovies || [],
-            },
-            {
-              title: "Popular TV Shows",
-              data: home.popularTV || [],
-            },
-            {
-              title: "Top Rated Movies",
-              data: home.topRatedMovies || [],
-            },
-            {
-              title: "Top Rated TV Shows",
-              data: home.topRatedTV || [],
-            },
-            {
-              title: "Action Movies",
-              data: home.actionMovies || [],
-            },
-            {
-              title: "Anime",
-              data: home.anime || [],
-            },
-          ]}
-        />
-        <Footer />
-      </div>
-
-    </Container>
-  );
+    <Footer />
+  </Container>
+);
 }
 
 const Container = styled.div`

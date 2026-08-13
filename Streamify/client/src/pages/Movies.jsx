@@ -3,19 +3,30 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import styled from "styled-components";
-import backgroundImage from "../assets/home.png";
-import titleImage from "../assets/title.png";
 import { FaPlay } from "react-icons/fa";
 import { AiOutlineInfoCircle } from "react-icons/ai";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchCategory, getGenres } from "../store";
 import Slider from "../components/Slider";
+import Hero from "../components/Hero";
 
 export default function Movies() {
     const [isScrolled, setScrolled] = useState(false);
     const navigate = useNavigate();
     const genresLoaded = useSelector((state) => state.streamify.genresLoaded);
-    const movies = useSelector((state) => state.streamify.movies);
+    const movieCategories = useSelector((state) => state.streamify.movies) || {};
+
+    const movies = [
+        ...(movieCategories.trending || []),
+        ...(movieCategories.nowPlaying || []),
+        ...(movieCategories.popular || []),
+        ...(movieCategories.topRated || []),
+        ...(movieCategories.upcoming || []),
+        ...(movieCategories.action || []),
+        ...(movieCategories.comedy || []),
+        ...(movieCategories.horror || []),
+        ...(movieCategories.romance || []),
+    ];
 
     const dispatch = useDispatch();
 
@@ -114,21 +125,48 @@ export default function Movies() {
     return (
         <Container>
             <Navbar isScrolled={isScrolled} />
-
+            <Hero items={movies} />
             <Slider
                 sections={[
-                    { title: "Trending Movies", data: movies.trending || [] },
-                    { title: "Now Playing", data: movies.nowPlaying || [] },
-                    { title: "Popular Movies", data: movies.popular || [] },
-                    { title: "Top Rated Movies", data: movies.topRated || [] },
-                    { title: "Upcoming Movies", data: movies.upcoming || [] },
-                    { title: "Action Movies", data: movies.action || [] },
-                    { title: "Comedy Movies", data: movies.comedy || [] },
-                    { title: "Horror Movies", data: movies.horror || [] },
-                    { title: "Romance Movies", data: movies.romance || [] },
+                    {
+                        title: "Trending Movies",
+                        data: movieCategories.trending || [],
+                    },
+                    {
+                        title: "Now Playing",
+                        data: movieCategories.nowPlaying || [],
+                    },
+                    {
+                        title: "Popular Movies",
+                        data: movieCategories.popular || [],
+                    },
+                    {
+                        title: "Top Rated Movies",
+                        data: movieCategories.topRated || [],
+                    },
+                    {
+                        title: "Upcoming Movies",
+                        data: movieCategories.upcoming || [],
+                    },
+                    {
+                        title: "Action Movies",
+                        data: movieCategories.action || [],
+                    },
+                    {
+                        title: "Comedy Movies",
+                        data: movieCategories.comedy || [],
+                    },
+                    {
+                        title: "Horror Movies",
+                        data: movieCategories.horror || [],
+                    },
+                    {
+                        title: "Romance Movies",
+                        data: movieCategories.romance || [],
+                    },
                 ]}
             />
-             <Footer />
+            <Footer />
         </Container>
     );
 }

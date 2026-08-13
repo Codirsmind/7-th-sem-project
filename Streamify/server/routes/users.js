@@ -5,7 +5,7 @@ const router = express.Router();
 
 router.post("/", async (req, res) => {
   try {
-    const { firebaseUid, name, email, profileImage } = req.body;
+    const { firebaseUid, name, email, profileImage, bio } = req.body;
 
     const existingUser = await User.findOne({ firebaseUid });
 

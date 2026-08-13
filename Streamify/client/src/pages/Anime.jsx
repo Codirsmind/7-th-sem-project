@@ -5,6 +5,7 @@ import Footer from "../components/Footer";
 import Slider from "../components/Slider";
 import { getGenres, fetchCategory } from "../store";
 import styled from "styled-components";
+import Hero from "../components/Hero";
 
 export default function Anime() {
     const [isScrolled, setScrolled] = useState(false);
@@ -15,7 +16,16 @@ export default function Anime() {
         (state) => state.streamify.genresLoaded
     );
 
-    const anime = useSelector((state) => state.streamify.anime);
+    const anime = useSelector((state) => state.streamify.anime) || {};
+    const animeItems = [
+    ...(anime.trending || []),
+    ...(anime.topRated || []),
+    ...(anime.airing || []),
+    ...(anime.action || []),
+    ...(anime.comedy || []),
+    ...(anime.drama || []),
+    ...(anime.fantasy || []),
+];
 
     useEffect(() => {
         dispatch(getGenres());
@@ -99,24 +109,48 @@ export default function Anime() {
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
 
-    return (
-        <Container>
-            <Navbar isScrolled={isScrolled} />
+   return (
+    <Container>
+        <Navbar isScrolled={isScrolled} />
 
-            <Slider
-                sections={[
-                    { title: "Trending Anime", data: anime.trending || [] },
-                    { title: "Top Rated Anime", data: anime.topRated || [] },
-                    { title: "Airing Anime", data: anime.airing || [] },
-                    { title: "Action Anime", data: anime.action || [] },
-                    { title: "Comedy Anime", data: anime.comedy || [] },
-                    { title: "Drama Anime", data: anime.drama || [] },
-                    { title: "Fantasy Anime", data: anime.fantasy || [] },
-                ]}
-            />
-            <Footer />
-        </Container>
-    );
+        <Hero items={animeItems} />
+
+        <Slider
+            sections={[
+                {
+                    title: "Trending Anime",
+                    data: anime.trending || [],
+                },
+                {
+                    title: "Top Rated Anime",
+                    data: anime.topRated || [],
+                },
+                {
+                    title: "Airing Anime",
+                    data: anime.airing || [],
+                },
+                {
+                    title: "Action Anime",
+                    data: anime.action || [],
+                },
+                {
+                    title: "Comedy Anime",
+                    data: anime.comedy || [],
+                },
+                {
+                    title: "Drama Anime",
+                    data: anime.drama || [],
+                },
+                {
+                    title: "Fantasy Anime",
+                    data: anime.fantasy || [],
+                },
+            ]}
+        />
+
+        <Footer />
+    </Container>
+);
 }
 
 const Container = styled.div`

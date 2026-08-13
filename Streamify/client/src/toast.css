@@ -65,3 +65,14 @@
   width: 22px;
   height: 22px;
 }
+
+/* Toast position */
+.Toastify__toast-container {
+  z-index: 99999 !important;
+}
+
+/* Keep toast below the navbar */
+.Toastify__toast-container--top-right {
+  top: 85px !important;
+  right: 20px !important;
+}

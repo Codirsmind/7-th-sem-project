@@ -5,6 +5,7 @@ import Slider from "../components/Slider";
 import Footer from "../components/Footer";
 import { getGenres, fetchCategory } from "../store";
 import styled from "styled-components";
+import Hero from "../components/Hero";
 
 export default function TVShows() {
   const [isScrolled, setScrolled] = useState(false);
@@ -14,8 +15,17 @@ export default function TVShows() {
   const genresLoaded = useSelector(
     (state) => state.streamify.genresLoaded
   );
-
-  const tv = useSelector((state) => state.streamify.tv);
+const tv = useSelector((state) => state.streamify.tv) || {};
+  const tvShows = [
+  ...(tv?.trending || []),
+  ...(tv?.popular || []),
+  ...(tv?.topRated || []),
+  ...(tv?.airingToday || []),
+  ...(tv?.onTheAir || []),
+  ...(tv?.actionAdventure || []),
+  ...(tv?.drama || []),
+  ...(tv?.crime || []),
+];
 
   useEffect(() => {
     dispatch(getGenres());
@@ -101,24 +111,51 @@ export default function TVShows() {
   }, []);
 
   return (
-    <Container>
-      <Navbar isScrolled={isScrolled} />
+  <Container>
+    <Navbar isScrolled={isScrolled} />
 
-      <Slider
-        sections={[
-          { title: "Trending TV Shows", data: tv.trending || [] },
-          { title: "Popular TV Shows", data: tv.popular || [] },
-          { title: "Top Rated TV Shows", data: tv.topRated || [] },
-          { title: "Airing Today", data: tv.airingToday || [] },
-          { title: "On The Air", data: tv.onTheAir || [] },
-          { title: "Action & Adventure", data: tv.actionAdventure || [] },
-          { title: "Drama", data: tv.drama || [] },
-          { title: "Crime", data: tv.crime || [] },
-        ]}
-      />
-       <Footer />
-    </Container>
-  );
+    <Hero items={tvShows} />
+
+    <Slider
+      sections={[
+        {
+          title: "Trending TV Shows",
+          data: tv.trending || [],
+        },
+        {
+          title: "Popular TV Shows",
+          data: tv.popular || [],
+        },
+        {
+          title: "Top Rated TV Shows",
+          data: tv.topRated || [],
+        },
+        {
+          title: "Airing Today",
+          data: tv.airingToday || [],
+        },
+        {
+          title: "On The Air",
+          data: tv.onTheAir || [],
+        },
+        {
+          title: "Action & Adventure",
+          data: tv.actionAdventure || [],
+        },
+        {
+          title: "Drama",
+          data: tv.drama || [],
+        },
+        {
+          title: "Crime",
+          data: tv.crime || [],
+        },
+      ]}
+    />
+
+    <Footer />
+  </Container>
+);
 }
 
 const Container = styled.div`

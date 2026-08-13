@@ -37,7 +37,7 @@ export default React.memo(function Card({ movieData, isLiked = false }) {
       }
 
       // ADD
-      await axios.post("http://localhost:8080/api/watchlist", {
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/watchlist`, {
         userId: user.uid,
         movieId: movieData.id,
         mediaType: movieData.mediaType,
