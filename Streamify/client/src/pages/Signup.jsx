@@ -1,17 +1,15 @@
-import React, { useState, useEffect } from "react";
+import  { useState} from "react";
 import { toast } from "react-toastify";
 import styled from "styled-components";
 import BackgroundImage from "../components/BackgroundImage";
-import Header from "../components/Header";
-import { createUserWithEmailAndPassword, sendEmailVerification, signOut, reload, onAuthStateChanged } from "firebase/auth"
+import { createUserWithEmailAndPassword, sendEmailVerification, signOut ,signInWithEmailAndPassword, reload } from "firebase/auth";
 import { firebaseAuth } from "../utils/firebase-config";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
-
 
 export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [isSigningUp, setIsSigningUp] = useState(false);
 
   const navigate = useNavigate();
 
@@ -23,6 +21,10 @@ export default function Signup() {
   const handleSignUp = async () => {
     if (!showPassword) {
       setShowPassword(true);
+      return;
+    }
+
+    if (isSigningUp) {
       return;
     }
 
@@ -38,46 +40,168 @@ export default function Signup() {
       return;
     }
 
+    setIsSigningUp(true);
+
     try {
-      const userCredential = await createUserWithEmailAndPassword(
-        firebaseAuth,
-        email,
-        password
+      const userCredential =
+        await createUserWithEmailAndPassword(
+          firebaseAuth,
+          email,
+          password
+        );
+
+      await sendEmailVerification(
+        userCredential.user
       );
-      
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/users`, {
-              firebaseUid: userCredential.user.uid,
-              name,
-              email: userCredential.user.email,
-            });
 
-      await sendEmailVerification(userCredential.user);
+      localStorage.setItem(
+        "verificationSentAt",
+        Date.now().toString()
+      );
 
-      await signOut(firebaseAuth);
-
-      navigate("/login", {
-        state: { verificationEmailSent: true },
+      navigate("/verify-email", {
+        state: {
+          email: email,
+        },
       });
 
     } catch (error) {
       console.error(error);
 
-      switch (error.code) {
-        case "auth/email-already-in-use":
-          toast.error("An account with this email already exists.");
-          break;
+      if (error.code === "auth/email-already-in-use") {
+        try {
+          const lastSent =
+            localStorage.getItem(
+              "verificationSentAt"
+            );
 
+          if (
+            lastSent &&
+            Date.now() - Number(lastSent) < 30 * 1000
+          ) {
+            const remaining = Math.ceil(
+              (
+                30 * 1000 -
+                (
+                  Date.now() -
+                  Number(lastSent)
+                )
+              ) / 1000
+            );
+
+            toast.error(
+              `Please wait ${remaining} seconds before requesting another verification email.`
+            );
+
+            navigate("/verify-email", {
+              state: {
+                email: email,
+              },
+            });
+
+            return;
+          }
+
+          const existingCredential =
+            await signInWithEmailAndPassword(
+              firebaseAuth,
+              email,
+              password
+            );
+
+          const existingUser =
+            existingCredential.user;
+
+          await reload(existingUser);
+
+          if (existingUser.emailVerified) {
+            await signOut(firebaseAuth);
+
+            toast.error(
+              "This email is already registered. Please log in."
+            );
+
+            return;
+          }
+
+          await sendEmailVerification(
+            existingUser
+          );
+
+          localStorage.setItem(
+            "verificationSentAt",
+            Date.now().toString()
+          );
+
+          navigate("/verify-email", {
+            state: {
+              email: email,
+            },
+          });
+
+        } catch (resendError) {
+          console.error(
+            "Verification error:",
+            resendError
+          );
+
+          try {
+            await signOut(firebaseAuth);
+          } catch (signOutError) {
+            console.error(signOutError);
+          }
+
+          switch (resendError.code) {
+            case "auth/invalid-credential":
+              toast.error(
+                "Incorrect email or password."
+              );
+              break;
+
+            case "auth/too-many-requests":
+              toast.error(
+                "Too many requests. Please wait a while before trying again."
+              );
+              break;
+
+            case "auth/network-request-failed":
+              toast.error(
+                "Network error. Please check your internet connection."
+              );
+              break;
+
+            default:
+              toast.error(
+                "Unable to resend verification email."
+              );
+          }
+        }
+
+        return;
+      }
+
+      switch (error.code) {
         case "auth/invalid-email":
-          toast.error("Please enter a valid email address.");
+          toast.error(
+            "Please enter a valid email address."
+          );
           break;
 
         case "auth/weak-password":
-          toast.error("Password must be at least 6 characters long.");
+          toast.error(
+            "Please enter a valid password."
+          );
+          break;
+
+        case "auth/too-many-requests":
+          toast.error(
+            "Too many requests. Please wait a while before trying again."
+          );
           break;
 
         case "auth/network-request-failed":
           toast.error(
-            "Network error. Please check your internet connection."
+            "Network error. Please check your connection."
           );
           break;
 
@@ -86,15 +210,22 @@ export default function Signup() {
             "Unable to create your account. Please try again."
           );
       }
+
+    } finally {
+      setIsSigningUp(false);
     }
   };
 
   return (
     <Container>
-    <BackgroundImage />
+      <BackgroundImage />
+
       <div className="body">
         <div className="text">
-          <h1>Unlimited Entertainment, All in One Place</h1>
+
+          <h1>
+            Unlimited Entertainment, All in One Place
+          </h1>
 
           <h2>
             Watch Your Favorite Movies, Anime and TV Shows Anytime,
@@ -105,9 +236,11 @@ export default function Signup() {
             Ready to watch? Enter your email to create or restart your
             membership.
           </h6>
+
         </div>
 
         <div className="form">
+
           <input
             type="email"
             placeholder="Email Address"
@@ -140,19 +273,30 @@ export default function Signup() {
                 type="password"
                 placeholder="Confirm Password"
                 value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                onChange={(e) =>
+                  setConfirmPassword(e.target.value)
+                }
               />
             </>
           )}
 
-          <button onClick={handleSignUp}>
-            {showPassword ? "Sign Up" : "Get Started"}
+          <button
+            onClick={handleSignUp}
+            disabled={isSigningUp}
+          >
+            {isSigningUp
+              ? "Signing Up..."
+              : showPassword
+              ? "Sign Up"
+              : "Get Started"}
           </button>
+
         </div>
       </div>
     </Container>
   );
 }
+
 
 const Container = styled.div`
   width: 100%;

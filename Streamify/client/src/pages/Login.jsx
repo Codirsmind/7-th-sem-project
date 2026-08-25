@@ -6,11 +6,13 @@ import Header from "../components/Header";
 import { signInWithEmailAndPassword, reload, signOut, onAuthStateChanged } from "firebase/auth"
 import { firebaseAuth } from "../utils/firebase-config";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import axios from "axios";
 
 
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [formValues, setFormValues] = useState({
     email: "",
     password: "",
@@ -29,12 +31,19 @@ export default function Login() {
   }, [location, navigate]);
 
   const handleLogin = async () => {
+    // Prevent double clicking
+    if (isLoggingIn) {
+      return;
+    }
+
     const { email, password } = formValues;
 
     if (!email || !password) {
       toast.error("Please enter both email and password.");
       return;
     }
+
+    setIsLoggingIn(true);
 
     try {
       const userCredential = await signInWithEmailAndPassword(
@@ -43,9 +52,13 @@ export default function Login() {
         password
       );
 
-      await reload(userCredential.user);
+      const user = userCredential.user;
 
-      if (!userCredential.user.emailVerified) {
+      // Refresh Firebase user information
+      await reload(user);
+
+      // Email not verified
+      if (!user.emailVerified) {
         await signOut(firebaseAuth);
 
         toast.error(
@@ -57,11 +70,27 @@ export default function Login() {
 
         return;
       }
+
+      // --------------------------------
+      // EMAIL IS VERIFIED
+      // --------------------------------
+
+      // Create/find user in MongoDB
+      await axios.post(
+        `${import.meta.env.VITE_API_URL}/api/users`,
+        {
+          firebaseUid: user.uid,
+          email: user.email,
+          name: user.displayName || "",
+        }
+      );
+
       toast.success("Login successful!", {
         toastId: "login-success",
       });
 
       navigate("/");
+
     } catch (error) {
       console.error(error);
 
@@ -83,17 +112,26 @@ export default function Login() {
           break;
 
         case "auth/too-many-requests":
-          toast.error("Too many failed attempts. Please try again later.");
+          toast.error(
+            "Too many failed attempts. Please try again later."
+          );
           break;
 
         case "auth/network-request-failed":
-          toast.error("Network error. Check your internet connection.");
+          toast.error(
+            "Network error. Check your internet connection."
+          );
           break;
 
         default:
-          toast.error("Something went wrong. Please try again.");
+          toast.error(
+            "Something went wrong. Please try again."
+          );
           console.error(error.message);
       }
+
+    } finally {
+      setIsLoggingIn(false);
     }
   };
 
@@ -123,7 +161,12 @@ export default function Login() {
             onChange={(e) => setFormValues({ ...formValues, [e.target.name]: e.target.value })}
           />
 
-          <button onClick={handleLogin}>Log In</button>
+          <button
+            onClick={handleLogin}
+            disabled={isLoggingIn}
+          >
+            {isLoggingIn ? "Logging In..." : "Log In"}
+          </button>
           <div className="bottom">
             <span>Don't have an account?</span>
             <Link to="/signup">Sign Up</Link>
