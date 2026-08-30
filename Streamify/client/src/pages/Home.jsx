@@ -6,6 +6,7 @@ import { getGenres, fetchCategory } from "../store";
 import styled from "styled-components";
 import Footer from "../components/Footer";
 import Hero from "../components/Hero";
+import ContinueWatching from "../components/ContinueWatching";
 
 
 export default function Home() {
@@ -99,6 +100,8 @@ export default function Home() {
     <Navbar isScrolled={isScrolled} />
 
     <Hero items={heroItems} />
+
+    <ContinueWatching />
 
     <Slider
       sections={[

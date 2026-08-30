@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import mongoose from "mongoose";
 import userRoutes from "./routes/users.js";
 import watchlistRoutes from "./routes/watchlist.js";
+import watchHistoryRouter from "./routes/watchHistory.js";
 import dns from "dns";
 
 const app = express();
@@ -12,6 +13,8 @@ app.use(cors());
 app.use(express.json());
 app.use("/api/users", userRoutes);
 app.use("/api/watchlist", watchlistRoutes);
+app.use("/api/watch-history", watchHistoryRouter);
+
 
 dotenv.config();
 

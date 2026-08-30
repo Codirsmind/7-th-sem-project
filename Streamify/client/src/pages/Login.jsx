@@ -2,9 +2,9 @@ import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import styled from "styled-components";
 import BackgroundImage from "../components/BackgroundImage";
-import Header from "../components/Header";
+import logo from "../assets/logo.png";
 import { signInWithEmailAndPassword, reload, signOut, onAuthStateChanged } from "firebase/auth"
-import { firebaseAuth } from "../utils/firebase-config";
+import { firebaseAuth } from "../Utils/firebase-config";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 
@@ -138,12 +138,13 @@ export default function Login() {
   return (
     <Container>
       <BackgroundImage />
-      <Header hideButton />
 
       <div className="body">
         <div className="text">
         </div>
-
+        <div className="brand">
+          <img src={logo} alt="logo" onClick={() => navigate("/")} />
+        </div>
         <div className="form">
           <h1>Welcome Back</h1>
           <input
@@ -197,6 +198,59 @@ const Container = styled.div`
     padding: 2rem;
   }
 
+    .brand {
+    position: fixed;
+    top: 25px;
+    left: 40px;
+
+    z-index: 100;
+
+    cursor: pointer;
+  }
+
+  .brand img {
+    width: 170px;
+    height: auto;
+
+    display: block;
+
+    transition: transform 0.25s ease, filter 0.25s ease;
+  }
+
+  .brand img:hover {
+    transform: scale(1.05);
+
+    filter: drop-shadow(
+      0 5px 18px rgba(229, 9, 20, 0.35)
+    );
+  }
+
+  .brand img:active {
+    transform: scale(0.98);
+  }
+
+  @media (max-width: 768px) {
+    .brand {
+      top: 20px;
+      left: 25px;
+    }
+
+    .brand img {
+      width: 140px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .brand {
+      top: 15px;
+      left: 18px;
+    }
+
+    .brand img {
+      width: 110px;
+    }
+  }
+    
   .text {
     display: none;
   }
