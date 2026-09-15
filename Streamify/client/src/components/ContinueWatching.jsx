@@ -4,15 +4,20 @@ import styled from "styled-components";
 import axios from "axios";
 import { firebaseAuth } from "../Utils/firebase-config";
 
+
+
 export default function ContinueWatching() {
+    
     const navigate = useNavigate();
 
     const [movies, setMovies] = useState([]);
 
     useEffect(() => {
         const fetchContinueWatching = async () => {
+            const API_URL = import.meta.env.VITE_API_URL;
             try {
                 const user = firebaseAuth.currentUser;
+
 
                 if (!user) {
                     console.log("No logged-in user");
@@ -20,7 +25,7 @@ export default function ContinueWatching() {
                 }
 
                 const response = await axios.get(
-                    `http://localhost:8080/api/watch-history/${user.uid}`
+                    `${API_URL}/api/watch-history/${user.uid}`
                 );
 
                 console.log("Continue Watching:", response.data);
@@ -42,6 +47,7 @@ export default function ContinueWatching() {
     }
 
     const removeFromContinueWatching = async (movieId) => {
+        const API_URL = import.meta.env.VITE_API_URL;
         try {
             const user = firebaseAuth.currentUser;
 
@@ -51,7 +57,7 @@ export default function ContinueWatching() {
             }
 
             await axios.delete(
-                `http://localhost:8080/api/watch-history/${user.uid}/${movieId}`
+                `${API_URL}/api/watch-history/${user.uid}/${movieId}`
             );
 
             // Remove immediately from UI

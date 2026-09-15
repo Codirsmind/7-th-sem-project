@@ -48,6 +48,7 @@ export default function PlayerDemo() {
 
   // Save watch progress
   const saveProgress = async () => {
+      const API_URL = import.meta.env.VITE_API_URL;
     console.log("🔥 saveProgress() called");
 
     try {
@@ -71,7 +72,7 @@ export default function PlayerDemo() {
       }
 
       await axios.post(
-        "http://localhost:8080/api/watch-history",
+        `${API_URL}/api/watch-history`,
         {
           firebaseUid: user.uid,
           movieId: movie.id || movie.movieId,
