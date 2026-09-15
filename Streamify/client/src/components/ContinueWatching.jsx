@@ -168,11 +168,30 @@ export default function ContinueWatching() {
     );
 }
 
+
+
+
 const Container = styled.section`
   width: 100%;
   padding: 0.5rem 1rem 0.5rem;
   box-sizing: border-box;
   background: #111;
+
+  @media (max-width: 1024px) {
+    padding: 0.5rem 0.8rem;
+  }
+
+  @media (max-width: 768px) {
+    padding: 0.5rem 0.6rem;
+  }
+
+  @media (max-width: 480px) {
+    padding: 0.5rem 0.5rem;
+  }
+
+  @media (max-width: 360px) {
+    padding: 0.4rem 0.4rem;
+  }
 `;
 
 const Title = styled.h2`
@@ -185,6 +204,30 @@ const Title = styled.h2`
   font-weight: 700;
 
   letter-spacing: -0.3px;
+  line-height: 1.3;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  @media (max-width: 1024px) {
+    font-size: 1.5rem;
+    margin-bottom: 0.7rem;
+  }
+
+  @media (max-width: 768px) {
+    font-size: 1.3rem;
+    margin-bottom: 0.6rem;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 1.15rem;
+    margin-bottom: 0.5rem;
+  }
+
+  @media (max-width: 360px) {
+    font-size: 1.05rem;
+  }
 `;
 
 const MovieRow = styled.div`
@@ -206,8 +249,31 @@ const MovieRow = styled.div`
 
   scrollbar-width: none;
 
+  position: relative;
+  z-index: 1;
+
+  touch-action: pan-x;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+
   &::-webkit-scrollbar {
     display: none;
+  }
+
+  @media (max-width: 1024px) {
+    gap: 1rem;
+  }
+
+  @media (max-width: 768px) {
+    gap: 0.8rem;
+  }
+
+  @media (max-width: 480px) {
+    gap: 0.65rem;
+  }
+
+  @media (max-width: 360px) {
+    gap: 0.55rem;
   }
 `;
 
@@ -244,6 +310,30 @@ const RemoveButton = styled.button`
     opacity 0.25s ease,
     transform 0.25s ease,
     background 0.25s ease;
+
+  &:hover {
+    background: rgba(229, 9, 20, 0.9);
+  }
+
+  @media (max-width: 768px) {
+    width: 28px;
+    height: 28px;
+
+    top: 8px;
+    right: 7px;
+
+    font-size: 19px;
+  }
+
+  @media (max-width: 480px) {
+    width: 26px;
+    height: 26px;
+
+    top: 6px;
+    right: 6px;
+
+    font-size: 18px;
+  }
 `;
 
 const MovieCard = styled.div`
@@ -260,6 +350,8 @@ const MovieCard = styled.div`
 
   overflow: visible;
 
+  isolation: isolate;
+
   transition:
     transform 0.3s ease,
     box-shadow 0.3s ease;
@@ -267,10 +359,51 @@ const MovieCard = styled.div`
   &:hover {
     transform: scale(1.06);
 
-    z-index: 20;
+    z-index: 100;
 
     box-shadow:
       0 12px 30px rgba(0, 0, 0, 0.65);
+
+    ${RemoveButton} {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @media (max-width: 1024px) {
+    width: 165px;
+    min-width: 165px;
+  }
+
+  @media (max-width: 768px) {
+    width: 145px;
+    min-width: 145px;
+
+    &:hover {
+      transform: scale(1.03);
+    }
+  }
+
+  @media (max-width: 480px) {
+    width: 125px;
+    min-width: 125px;
+
+    &:hover {
+      transform: scale(1.02);
+    }
+  }
+
+  @media (max-width: 360px) {
+    width: 115px;
+    min-width: 115px;
+  }
+
+  @media (hover: none) and (pointer: coarse) {
+    &:hover {
+      transform: none;
+
+      box-shadow: none;
+    }
 
     ${RemoveButton} {
       opacity: 1;
@@ -296,6 +429,28 @@ const Poster = styled.img`
   ${MovieCard}:hover & {
     transform: scale(1.03);
   }
+
+  @media (max-width: 1024px) {
+    height: 215px;
+  }
+
+  @media (max-width: 768px) {
+    height: 195px;
+  }
+
+  @media (max-width: 480px) {
+    height: 170px;
+  }
+
+  @media (max-width: 360px) {
+    height: 155px;
+  }
+
+  @media (hover: none) and (pointer: coarse) {
+    ${MovieCard}:hover & {
+      transform: none;
+    }
+  }
 `;
 
 const PosterPlaceholder = styled.div`
@@ -318,6 +473,22 @@ const PosterPlaceholder = styled.div`
   font-size: 0.9rem;
 
   border-radius: 8px 8px 0 0;
+
+  @media (max-width: 1024px) {
+    height: 215px;
+  }
+
+  @media (max-width: 768px) {
+    height: 195px;
+  }
+
+  @media (max-width: 480px) {
+    height: 170px;
+  }
+
+  @media (max-width: 360px) {
+    height: 155px;
+  }
 `;
 
 const ProgressContainer = styled.div`
@@ -356,17 +527,57 @@ const MovieTitle = styled.h3`
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+
+  @media (max-width: 768px) {
+    font-size: 0.88rem;
+
+    padding:
+      0.6rem
+      0.65rem
+      0.15rem;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 0.8rem;
+
+    padding:
+      0.5rem
+      0.55rem
+      0.1rem;
+  }
 `;
 
 const ProgressText = styled.p`
   margin: 0;
-  padding: 0 0.8rem 0.75rem;
+
+  padding:
+    0
+    0.8rem
+    0.75rem;
 
   color: #999;
 
   font-family: Arial, sans-serif;
   font-size: 0.78rem;
   font-weight: 400;
+
+  @media (max-width: 768px) {
+    font-size: 0.72rem;
+
+    padding:
+      0
+      0.65rem
+      0.65rem;
+  }
+
+  @media (max-width: 480px) {
+    font-size: 0.68rem;
+
+    padding:
+      0
+      0.55rem
+      0.55rem;
+  }
 `;
 
 const PlayButton = styled.button`
@@ -382,13 +593,19 @@ const PlayButton = styled.button`
   align-items: center;
   justify-content: center;
 
-  /* Perfect center */
-  transform: translate(-50%, -50%) scale(0.85);
+  transform:
+    translate(-50%, -50%)
+    scale(0.85);
 
-  border: 2px solid rgba(255, 255, 255, 0.95);
+  border:
+    2px solid
+    rgba(255, 255, 255, 0.95);
+
   border-radius: 50%;
 
-  background: rgba(0, 0, 0, 0.55);
+  background:
+    rgba(0, 0, 0, 0.55);
+
   backdrop-filter: blur(5px);
   -webkit-backdrop-filter: blur(5px);
 
@@ -412,26 +629,75 @@ const PlayButton = styled.button`
     background 0.25s ease,
     box-shadow 0.25s ease;
 
-  /* Show when card is hovered */
   ${MovieCard}:hover & {
     opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
+
+    transform:
+      translate(-50%, -50%)
+      scale(1);
   }
 
-  /* Play button hover */
   &:hover {
-    background: rgba(229, 9, 20, 0.9);
+    background:
+      rgba(229, 9, 20, 0.9);
 
     border-color: #fff;
 
-    transform: translate(-50%, -50%) scale(1.1);
+    transform:
+      translate(-50%, -50%)
+      scale(1.1);
 
     box-shadow:
-      0 0 0 4px rgba(255, 255, 255, 0.12),
-      0 8px 25px rgba(0, 0, 0, 0.6);
+      0 0 0 4px
+      rgba(255, 255, 255, 0.12),
+      0 8px 25px
+      rgba(0, 0, 0, 0.6);
   }
 
   &:active {
-    transform: translate(-50%, -50%) scale(0.95);
+    transform:
+      translate(-50%, -50%)
+      scale(0.95);
+  }
+
+  @media (max-width: 1024px) {
+    width: 52px;
+    height: 52px;
+
+    font-size: 21px;
+  }
+
+  @media (max-width: 768px) {
+    width: 48px;
+    height: 48px;
+
+    font-size: 20px;
+  }
+
+  @media (max-width: 480px) {
+    width: 44px;
+    height: 44px;
+
+    font-size: 18px;
+  }
+
+  @media (hover: none) and (pointer: coarse) {
+    opacity: 1;
+
+    transform:
+      translate(-50%, -50%)
+      scale(1);
+
+    &:hover {
+      background:
+        rgba(0, 0, 0, 0.55);
+
+      transform:
+        translate(-50%, -50%)
+        scale(1);
+
+      box-shadow: none;
+    }
   }
 `;
+
