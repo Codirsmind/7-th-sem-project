@@ -7,165 +7,171 @@ import { firebaseAuth } from "../Utils/firebase-config";
 
 
 export default function ContinueWatching() {
-    
-    const navigate = useNavigate();
 
-    const [movies, setMovies] = useState([]);
+  const navigate = useNavigate();
 
-    useEffect(() => {
-        const fetchContinueWatching = async () => {
-            const API_URL = import.meta.env.VITE_API_URL;
-            try {
-                const user = firebaseAuth.currentUser;
+  const [movies, setMovies] = useState([]);
+
+  useEffect(() => {
+    const fetchContinueWatching = async () => {
+      const API_URL = import.meta.env.VITE_API_URL;
+      try {
+        const user = firebaseAuth.currentUser;
 
 
-                if (!user) {
-                    console.log("No logged-in user");
-                    return;
-                }
-
-                const response = await axios.get(
-                    `${API_URL}/api/watch-history/${user.uid}`
-                );
-
-                console.log("Continue Watching:", response.data);
-
-                setMovies(response.data);
-            } catch (error) {
-                console.error(
-                    "Failed to fetch continue watching:",
-                    error
-                );
-            }
-        };
-
-        fetchContinueWatching();
-    }, []);
-
-    if (movies.length === 0) {
-        return null;
-    }
-
-    const removeFromContinueWatching = async (movieId) => {
-        const API_URL = import.meta.env.VITE_API_URL;
-        try {
-            const user = firebaseAuth.currentUser;
-
-            if (!user) {
-                console.log("❌ User not logged in");
-                return;
-            }
-
-            await axios.delete(
-                `${API_URL}/api/watch-history/${user.uid}/${movieId}`
-            );
-
-            // Remove immediately from UI
-            setMovies((prevMovies) =>
-                prevMovies.filter(
-                    (movie) => movie.movieId !== movieId
-                )
-            );
-
-            console.log("✅ Removed from Continue Watching");
-
-        } catch (error) {
-            console.error(
-                "❌ Failed to remove from Continue Watching:",
-                error
-            );
+        if (!user) {
+          console.log("No logged-in user");
+          return;
         }
+
+        const response = await axios.get(
+          `${API_URL}/api/watch-history/${user.uid}`
+        );
+
+        console.log("Continue Watching:", response.data);
+
+        setMovies(response.data);
+      } catch (error) {
+        console.error(
+          "Failed to fetch continue watching:",
+          error
+        );
+      }
     };
 
-    return (
-        <Container>
-            <Title>Continue Watching</Title>
+    fetchContinueWatching();
+  }, []);
 
-            <MovieRow>
-                {movies.map((movie) => {
-                    const progress =
-                        movie.duration > 0
-                            ? Math.min(
-                                (movie.watchedTime / movie.duration) * 100,
-                                100
-                            )
-                            : 0;
+  if (movies.length === 0) {
+    return null;
+  }
 
-                    return (
-                        <MovieCard
-                            key={movie.movieId}
-                            onClick={() => {
-                                navigate("/player", {
-                                    state: {
-                                        movie: movie,
-                                        watchedTime: movie.watchedTime,
-                                    },
-                                });
-                            }}
-                        >
-                            <RemoveButton
-                                onClick={(e) => {
-                                    e.stopPropagation();
+  const removeFromContinueWatching = async (movieId) => {
+    const API_URL = import.meta.env.VITE_API_URL;
+    try {
+      const user = firebaseAuth.currentUser;
 
-                                    removeFromContinueWatching(movie.movieId);
-                                }}
-                                title="Remove from Continue Watching"
-                            >
-                                ×
-                            </RemoveButton>
+      if (!user) {
+        console.log("❌ User not logged in");
+        return;
+      }
 
-                            {/* Poster */}
-                            {movie.posterPath ? (
-                                <Poster
-                                    src={`https://image.tmdb.org/t/p/w500${movie.posterPath}`}
-                                    alt={movie.title}
-                                />
-                            ) : (
-                                <PosterPlaceholder>
-                                    No Poster
-                                </PosterPlaceholder>
-                            )}
+      await axios.delete(
+        `${API_URL}/api/watch-history/${user.uid}/${movieId}`
+      );
 
-                            <PlayButton
-                                onClick={(e) => {
-                                    e.stopPropagation();
+      // Remove immediately from UI
+      setMovies((prevMovies) =>
+        prevMovies.filter(
+          (movie) => movie.movieId !== movieId
+        )
+      );
 
-                                    navigate("/player", {
-                                        state: {
-                                            movie: movie,
-                                            watchedTime: movie.watchedTime,
-                                        },
-                                    });
-                                }}
-                                title="Resume watching"
-                            >
-                                ▶
-                            </PlayButton>
+      console.log("✅ Removed from Continue Watching");
 
-                            {/* Progress */}
-                            <ProgressContainer>
-                                <ProgressBar
-                                    style={{
-                                        width: `${progress}%`,
-                                    }}
-                                />
-                            </ProgressContainer>
+    } catch (error) {
+      console.error(
+        "❌ Failed to remove from Continue Watching:",
+        error
+      );
+    }
+  };
 
-                            {/* Title */}
-                            <MovieTitle>
-                                {movie.title}
-                            </MovieTitle>
+  return (
+    <Container>
+      <Title>Continue Watching</Title>
 
-                            <ProgressText>
-                                {Math.round(progress)}% watched
-                            </ProgressText>
+      <MovieRow>
+        {movies.map((movie) => {
+          const progress =
+            movie.duration > 0
+              ? Math.min(
+                (movie.watchedTime / movie.duration) * 100,
+                100
+              )
+              : 0;
 
-                        </MovieCard>
-                    );
-                })}
-            </MovieRow>
-        </Container>
-    );
+          return (
+            <MovieCard
+              key={movie.movieId}
+              onClick={() => {
+                navigate("/player", {
+                  state: {
+                    movie: {
+                      ...movie,
+                      id: movie.movieId || movie.id,
+                    },
+                    watchedTime: movie.watchedTime,
+                  },
+                });
+              }}
+            >
+              <RemoveButton
+                onClick={(e) => {
+                  e.stopPropagation();
+
+                  removeFromContinueWatching(movie.movieId);
+                }}
+                title="Remove from Continue Watching"
+              >
+                ×
+              </RemoveButton>
+
+              {/* Poster */}
+              {movie.posterPath ? (
+                <Poster
+                  src={`https://image.tmdb.org/t/p/w500${movie.posterPath}`}
+                  alt={movie.title}
+                />
+              ) : (
+                <PosterPlaceholder>
+                  No Poster
+                </PosterPlaceholder>
+              )}
+
+              <PlayButton
+                onClick={(e) => {
+                  e.stopPropagation();
+
+                  navigate("/player", {
+                    state: {
+                      movie: {
+                        ...movie,
+                        id: movie.movieId || movie.id,
+                      },
+                      watchedTime: movie.watchedTime,
+                    },
+                  });
+                }}
+                title="Resume watching"
+              >
+                ▶
+              </PlayButton>
+
+              {/* Progress */}
+              <ProgressContainer>
+                <ProgressBar
+                  style={{
+                    width: `${progress}%`,
+                  }}
+                />
+              </ProgressContainer>
+
+              {/* Title */}
+              <MovieTitle>
+                {movie.title}
+              </MovieTitle>
+
+              <ProgressText>
+                {Math.round(progress)}% watched
+              </ProgressText>
+
+            </MovieCard>
+          );
+        })}
+      </MovieRow>
+    </Container>
+  );
 }
 
 

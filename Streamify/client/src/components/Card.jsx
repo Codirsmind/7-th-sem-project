@@ -6,7 +6,6 @@ import { IoPlayCircleSharp } from "react-icons/io5";
 import { RiThumbUpFill, RiThumbDownFill } from "react-icons/ri";
 import { BsCheck } from "react-icons/bs";
 import { AiOutlinePlus } from "react-icons/ai";
-import { BiChevronDown } from "react-icons/bi";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { firebaseAuth } from "../Utils/firebase-config";
@@ -39,7 +38,7 @@ export default React.memo(function Card({ movieData, isLiked = false }) {
       // REMOVE
       if (isInWatchlist) {
         await axios.delete(
-          `http://localhost:8080/api/watchlist/${user.uid}/${movieData.id}/${movieData.mediaType}`
+          `${import.meta.env.VITE_API_URL}/api/watchlist/${user.uid}/${movieData.id}/${movieData.mediaType}`
         );
 
         setIsInWatchlist(false);

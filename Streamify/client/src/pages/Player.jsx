@@ -1,30 +1,39 @@
-import React, { useRef, useState } from "react";
+import { useRef, useState } from "react";
 import styled from "styled-components";
 import { BsArrowLeft } from "react-icons/bs";
 import video from "../assets/video.mp4";
 import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import { firebaseAuth } from "../Utils/firebase-config";
+import VideoInteractions from "../components/VideoInteractions";
+import Comments from "../components/Comments";
+import Footer from "../components/Footer";
 
-export default function PlayerDemo() {
+export default function Player() {
   const navigate = useNavigate();
   const location = useLocation();
 
   const movie = location.state?.movie;
-  console.log("🎬 Player received movie:", movie);
+
+  const contentId = movie?.id || movie?.movieId;
+
+  console.log("PLAYER LOCATION STATE:", location.state);
+  console.log("PLAYER MOVIE:", movie);
+  console.log("PLAYER MOVIE ID:", movie?.id);
+
   const watchedTime = location.state?.watchedTime || 0;
 
   const videoRef = useRef(null);
 
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+
   const handleLoadedMetadata = () => {
     if (videoRef.current) {
       const videoElement = videoRef.current;
 
       setDuration(videoElement.duration);
 
-      // Resume from saved position
       if (
         watchedTime > 0 &&
         watchedTime < videoElement.duration
@@ -46,9 +55,9 @@ export default function PlayerDemo() {
     }
   };
 
-  // Save watch progress
   const saveProgress = async () => {
-      const API_URL = import.meta.env.VITE_API_URL;
+    const API_URL = import.meta.env.VITE_API_URL;
+
     console.log("🔥 saveProgress() called");
 
     try {
@@ -93,7 +102,6 @@ export default function PlayerDemo() {
     }
   };
 
-  // Back button
   const handleBack = async () => {
     await saveProgress();
     navigate(-1);
@@ -115,20 +123,28 @@ export default function PlayerDemo() {
           onLoadedMetadata={handleLoadedMetadata}
           onTimeUpdate={handleTimeUpdate}
         />
+
       </div>
+
+      <div className="interactions">
+        <VideoInteractions contentId={contentId} />
+      </div>
+      <div>
+        <Comments contentId={contentId} />
+      </div>
+      <Footer />
     </Container>
   );
 }
 
-
 const Container = styled.div`
   width: 100%;
-  height: 100vh;
-  height: 100dvh;
+  min-height: 100vh;
 
   background: #000;
 
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
 
   position: relative;
 
@@ -136,7 +152,8 @@ const Container = styled.div`
     position: relative;
 
     width: 100%;
-    height: 100%;
+    height: 100vh;
+    height: 100dvh;
 
     display: flex;
     align-items: center;
@@ -145,7 +162,6 @@ const Container = styled.div`
     background: #000;
   }
 
-  /* Dark gradient over the video */
   .player::before {
     content: "";
 
@@ -168,7 +184,6 @@ const Container = styled.div`
     pointer-events: none;
   }
 
-  /* Bottom gradient */
   .player::after {
     content: "";
 
@@ -191,7 +206,6 @@ const Container = styled.div`
     pointer-events: none;
   }
 
-  /* Back button */
   .back {
     position: absolute;
 
@@ -248,7 +262,6 @@ const Container = styled.div`
     transform: scale(0.95);
   }
 
-  /* Video */
   video {
     width: 100%;
     height: 100%;
@@ -264,7 +277,6 @@ const Container = styled.div`
     border: none;
   }
 
-  /* Chrome / Edge video controls */
   video::-webkit-media-controls-panel {
     background-image: linear-gradient(
       transparent,
@@ -272,7 +284,20 @@ const Container = styled.div`
     );
   }
 
-  /* Mobile */
+  .interactions {
+    width: 100%;
+    min-height: 100px;
+
+    background: #000;
+
+    position: relative;
+
+    z-index: 20;
+
+    padding: 20px 30px;
+    box-sizing: border-box;
+  }
+
   @media (max-width: 768px) {
     .back {
       top: 18px;
@@ -293,9 +318,12 @@ const Container = styled.div`
     .player::after {
       height: 90px;
     }
+
+    .interactions {
+      padding: 15px 20px;
+    }
   }
 
-  /* Small mobile */
   @media (max-width: 480px) {
     .back {
       top: 14px;
@@ -307,6 +335,10 @@ const Container = styled.div`
 
     .back svg {
       font-size: 1.35rem;
+    }
+
+    .interactions {
+      padding: 15px;
     }
   }
 `;
