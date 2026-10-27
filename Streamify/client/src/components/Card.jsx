@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import video from "../assets/video.mp4";
@@ -8,16 +8,72 @@ import { BsCheck } from "react-icons/bs";
 import { AiOutlinePlus } from "react-icons/ai";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { onAuthStateChanged } from "firebase/auth";
 import { firebaseAuth } from "../Utils/firebase-config";
 import { requireAuth } from "../Utils/requireAuth";
 
-export default React.memo(function Card({ movieData, isLiked = false }) {
+export default React.memo(function Card({
+  movieData,
+  isLiked = false,
+}) {
   const [isHovered, setIsHovered] = useState(false);
   const [isInWatchlist, setIsInWatchlist] = useState(isLiked);
-  const navigate = useNavigate();
   const [showFullOverview, setShowFullOverview] = useState(false);
+  const [reaction, setReaction] = useState(null);
+  const [reactionLoading, setReactionLoading] = useState(false);
 
-  // Open player with movie data
+  const navigate = useNavigate();
+
+  const API_URL = import.meta.env.VITE_API_URL;
+
+  const contentId = String(
+    movieData?.id ?? movieData?.movieId ?? ""
+  );
+
+  // Load the user's saved reaction from the backend
+  useEffect(() => {
+    let cancelled = false;
+
+    const unsubscribe = onAuthStateChanged(
+      firebaseAuth,
+      async (user) => {
+        if (!user || !contentId) {
+          if (!cancelled) {
+            setReaction(null);
+          }
+          return;
+        }
+
+        try {
+          const response = await axios.get(
+            `${API_URL}/api/interactions/${encodeURIComponent(contentId)}`
+          );
+
+          if (cancelled) return;
+
+          const likedBy = response.data.likedBy || [];
+          const dislikedBy = response.data.dislikedBy || [];
+
+          if (likedBy.includes(user.uid)) {
+            setReaction("like");
+          } else if (dislikedBy.includes(user.uid)) {
+            setReaction("dislike");
+          } else {
+            setReaction(null);
+          }
+        } catch (error) {
+          console.error("Failed to load reaction:", error);
+        }
+      }
+    );
+
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
+  }, [contentId, API_URL]);
+
+  // Open the video player
   const handlePlay = () => {
     if (!requireAuth(navigate)) return;
 
@@ -28,27 +84,65 @@ export default React.memo(function Card({ movieData, isLiked = false }) {
     });
   };
 
-  // Add / Remove from watchlist
+  // Save Like or Dislike to the backend
+  const handleReaction = async (type, event) => {
+    event.stopPropagation();
+
+    if (reactionLoading) return;
+    if (!requireAuth(navigate)) return;
+
+    const user = firebaseAuth.currentUser;
+
+    if (!user || !contentId) {
+      toast.error("Unable to update reaction.");
+      return;
+    }
+
+    try {
+      setReactionLoading(true);
+
+      const response = await axios.post(
+        `${API_URL}/api/interactions/${encodeURIComponent(contentId)}/${type}`,
+        {
+          userId: user.uid,
+        }
+      );
+
+      if (response.data.liked) {
+        setReaction("like");
+      } else if (response.data.disliked) {
+        setReaction("dislike");
+      } else {
+        setReaction(null);
+      }
+    } catch (error) {
+      console.error("Reaction error:", error);
+      toast.error("Unable to save your reaction.");
+    } finally {
+      setReactionLoading(false);
+    }
+  };
+
+  // Add or remove from watchlist
   const handleWatchlist = async () => {
     try {
-      const user = firebaseAuth.currentUser;
-
       if (!requireAuth(navigate)) return;
 
-      // REMOVE
+      const user = firebaseAuth.currentUser;
+
+      if (!user) return;
+
       if (isInWatchlist) {
         await axios.delete(
-          `${import.meta.env.VITE_API_URL}/api/watchlist/${user.uid}/${movieData.id}/${movieData.mediaType}`
+          `${API_URL}/api/watchlist/${user.uid}/${movieData.id}/${movieData.mediaType}`
         );
 
         setIsInWatchlist(false);
-
         toast.success("Removed from your watchlist.");
         return;
       }
 
-      // ADD
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/watchlist`, {
+      await axios.post(`${API_URL}/api/watchlist`, {
         userId: user.uid,
         movieId: movieData.id,
         mediaType: movieData.mediaType,
@@ -62,7 +156,6 @@ export default React.memo(function Card({ movieData, isLiked = false }) {
       });
 
       setIsInWatchlist(true);
-
       toast.success("Added to your watchlist.");
     } catch (error) {
       console.error("Watchlist error:", error);
@@ -76,6 +169,9 @@ export default React.memo(function Card({ movieData, isLiked = false }) {
     }
   };
 
+  const overview = movieData?.overview || "";
+  const genres = movieData?.genres || [];
+
   return (
     <Container
       onMouseEnter={() => setIsHovered(true)}
@@ -83,24 +179,28 @@ export default React.memo(function Card({ movieData, isLiked = false }) {
     >
       <img
         className="movie-image"
-        src={`https://image.tmdb.org/t/p/w500${movieData.image}`}
-        alt={movieData.name}
+        src={
+          movieData.image
+            ? `https://image.tmdb.org/t/p/w500${movieData.image}`
+            : ""
+        }
+        alt={movieData.name || "Movie"}
       />
 
       {isHovered && (
         <div className="hover">
-
           <div className="image-video-container">
-
-            {/* Hover Image */}
             <img
               className="hover-image"
-              src={`https://image.tmdb.org/t/p/original${movieData.backdrop}`}
-              alt={movieData.name}
+              src={
+                movieData.backdrop
+                  ? `https://image.tmdb.org/t/p/original${movieData.backdrop}`
+                  : ""
+              }
+              alt={movieData.name || "Movie"}
               onClick={handlePlay}
             />
 
-            {/* Hover Video */}
             <video
               className="hover-video"
               src={video}
@@ -109,12 +209,9 @@ export default React.memo(function Card({ movieData, isLiked = false }) {
               loop
               onClick={handlePlay}
             />
-
           </div>
 
           <div className="movie-details">
-
-            {/* Movie Title */}
             <h3
               className="movie-title"
               onClick={handlePlay}
@@ -123,9 +220,8 @@ export default React.memo(function Card({ movieData, isLiked = false }) {
             </h3>
 
             <div className="movie-info">
-
               <span className="match">
-                ⭐ {movieData.rating?.toFixed(1)}
+                ⭐ {movieData.rating?.toFixed?.(1) ?? "N/A"}
               </span>
 
               <span className="year">
@@ -135,38 +231,49 @@ export default React.memo(function Card({ movieData, isLiked = false }) {
               <span className="lang">
                 {movieData.language?.toUpperCase()}
               </span>
-
             </div>
 
-            {/* Controls */}
             <div className="controls">
-
-              {/* PLAY */}
               <IoPlayCircleSharp
                 className="icon play"
                 title="Play"
                 onClick={handlePlay}
               />
 
-              {/* LIKE */}
               <RiThumbUpFill
-                className="icon"
+                className={`icon ${
+                  reaction === "like" ? "reaction-active" : ""
+                }`}
                 title="Like"
-                onClick={() => {
-                  if (!requireAuth(navigate)) return;
+                role="button"
+                aria-label="Like"
+                aria-pressed={reaction === "like"}
+                onClick={(event) =>
+                  handleReaction("like", event)
+                }
+                style={{
+                  opacity: reactionLoading ? 0.5 : 1,
+                  pointerEvents: reactionLoading ? "none" : "auto",
                 }}
               />
 
-              {/* DISLIKE */}
               <RiThumbDownFill
-                className="icon"
+                className={`icon ${
+                  reaction === "dislike" ? "reaction-active" : ""
+                }`}
                 title="Dislike"
-                onClick={() => {
-                  if (!requireAuth(navigate)) return;
+                role="button"
+                aria-label="Dislike"
+                aria-pressed={reaction === "dislike"}
+                onClick={(event) =>
+                  handleReaction("dislike", event)
+                }
+                style={{
+                  opacity: reactionLoading ? 0.5 : 1,
+                  pointerEvents: reactionLoading ? "none" : "auto",
                 }}
               />
 
-              {/* WATCHLIST */}
               {isInWatchlist ? (
                 <BsCheck
                   className="icon"
@@ -180,18 +287,16 @@ export default React.memo(function Card({ movieData, isLiked = false }) {
                   onClick={handleWatchlist}
                 />
               )}
-
             </div>
 
-            {/* Overview */}
             <p className="overview">
               {showFullOverview
-                ? movieData.overview
-                : movieData.overview.length > 120
-                  ? movieData.overview.substring(0, 120)
-                  : movieData.overview}
+                ? overview
+                : overview.length > 120
+                  ? overview.substring(0, 120)
+                  : overview}
 
-              {movieData.overview.length > 120 && (
+              {overview.length > 120 && (
                 <span
                   className="read-more"
                   onClick={() =>
@@ -205,13 +310,11 @@ export default React.memo(function Card({ movieData, isLiked = false }) {
               )}
             </p>
 
-            {/* Genres */}
             <ul className="genres">
-              {movieData.genres.map((genre) => (
+              {genres.map((genre) => (
                 <li key={genre}>{genre}</li>
               ))}
             </ul>
-
           </div>
         </div>
       )}
@@ -220,13 +323,7 @@ export default React.memo(function Card({ movieData, isLiked = false }) {
 });
 
 
-
-
 const Container = styled.div`
-  /* =========================================
-     MOVIE CARD - DEFAULT / DESKTOP
-  ========================================= */
-
   width: 165px;
   height: 248px;
   position: relative;
@@ -236,11 +333,13 @@ const Container = styled.div`
   transition: transform 0.35s ease;
   transform-origin: center center;
 
+  .icon.reaction-active {
+    background: #46d369;
+    color: #111;
+    border-color: #46d369;
+  }
 
-  /* =========================================
-     MAIN MOVIE IMAGE
-  ========================================= */
-
+  /* Main movie image */
   .movie-image {
     width: 100%;
     height: 100%;
@@ -249,348 +348,222 @@ const Container = styled.div`
     display: block;
   }
 
-
-  /* =========================================
-     CARD HOVER
-  ========================================= */
-
+  /* Card hover */
   &:hover {
     transform: scale(1.12);
     z-index: 99999;
   }
 
-
-  /* =========================================
-     HOVER POPUP
-  ========================================= */
-
+  /* Hover popup - fixed positioning */
   .hover {
     position: absolute;
-    top: -35px;
-    left: 50%;
-
-    transform: translateX(-50%);
+    top: -10px;
+    left: 0;
 
     width: 360px;
-    max-width: 90vw;
+    max-width: calc(100vw - 24px);
+    box-sizing: border-box;
 
     background: #181818;
-
     border-radius: 12px;
-
     overflow: hidden;
 
-    box-shadow:
-      0 18px 45px rgba(0, 0, 0, 0.85);
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.85);
 
     animation: popup 0.25s ease forwards;
-
     z-index: 999999;
   }
 
-
-  /* =========================================
-     POPUP ANIMATION
-  ========================================= */
-
+  /* Popup animation */
   @keyframes popup {
     from {
       opacity: 0;
-
-      transform:
-        translateX(-50%)
-        scale(0.92);
+      transform: scale(0.96);
     }
 
     to {
       opacity: 1;
-
-      transform:
-        translateX(-50%)
-        scale(1);
+      transform: scale(1);
     }
   }
 
-
-  /* =========================================
-     IMAGE / VIDEO CONTAINER
-  ========================================= */
-
+  /* Image / video container */
   .image-video-container {
     width: 100%;
     height: 200px;
-
     position: relative;
-
     background: #000;
-
     overflow: hidden;
   }
-
 
   .hover-image,
   .hover-video {
     width: 100%;
     height: 100%;
-
     object-fit: cover;
-
     display: block;
   }
-
 
   .hover-video {
     position: absolute;
     inset: 0;
   }
 
-
-  /* =========================================
-     MOVIE DETAILS
-  ========================================= */
-
+  /* Movie details */
   .movie-details {
     padding: 1rem;
+    box-sizing: border-box;
+    min-width: 0;
   }
 
-
-  /* =========================================
-     MOVIE TITLE
-  ========================================= */
-
+  /* Movie title */
   .movie-title {
     color: #fff;
-
     font-size: 1.15rem;
-
     font-weight: 700;
-
     margin-bottom: 0.8rem;
-
     cursor: pointer;
-
     line-height: 1.3;
-
-    overflow-wrap: break-word;
+    overflow-wrap: anywhere;
   }
 
-
-  /* =========================================
-     MOVIE INFO
-  ========================================= */
-
+  /* Movie information */
   .movie-info {
     display: flex;
-
     align-items: center;
-
     gap: 0.7rem;
-
     margin-bottom: 0.9rem;
-
     font-size: 0.85rem;
-
     flex-wrap: wrap;
   }
 
-
   .match {
     color: #46d369;
-
     font-weight: 700;
   }
-
 
   .year,
   .lang {
     color: #d2d2d2;
   }
 
-
-  /* =========================================
-     OVERVIEW
-  ========================================= */
-
+  /* Overview */
   .overview {
     color: #d0d0d0;
-
     font-size: 0.9rem;
-
     line-height: 1.5;
-
     margin-bottom: 1rem;
-
     word-break: break-word;
-
-    overflow-wrap: break-word;
-
+    overflow-wrap: anywhere;
     transition: all 0.3s ease;
-
     display: -webkit-box;
-
     -webkit-box-orient: vertical;
-
     -webkit-line-clamp: 3;
-
     overflow: hidden;
   }
 
-
-  /* =========================================
-     READ MORE
-  ========================================= */
-
+  /* Read more */
   .read-more {
     color: #46d369;
-
     font-weight: 600;
-
     cursor: pointer;
-
     margin-left: 4px;
-
     text-decoration: none;
-
     transition: color 0.25s ease;
   }
 
-
   .read-more:hover {
     color: #7ef0a0;
-
     text-decoration: none;
   }
 
-
-  /* =========================================
-     CONTROLS
-  ========================================= */
-
+  /* Controls */
   .controls {
     display: flex;
-
     align-items: center;
-
     gap: 0.7rem;
-
     margin-bottom: 1rem;
+    flex-wrap: wrap;
   }
 
-
-  /* =========================================
-     ICON BUTTON
-  ========================================= */
-
+  /* Icon buttons */
   .icon {
     width: 38px;
     height: 38px;
-
     padding: 7px;
-
+    box-sizing: border-box;
     border-radius: 50%;
-
-    border: 2px solid
-      rgba(255, 255, 255, 0.35);
-
+    border: 2px solid rgba(255, 255, 255, 0.35);
     color: white;
-
     cursor: pointer;
-
     transition: all 0.25s ease;
-
     flex-shrink: 0;
   }
 
-
   .icon:hover {
     background: white;
-
     color: black;
-
     border-color: white;
-
     transform: scale(1.08);
   }
 
-
-  /* =========================================
-     PLAY BUTTON
-  ========================================= */
-
-  .play {
-    background: white;
-
-    color: black;
-
-    border: none;
+  .icon.reaction-active {
+    background: #46d369;
+    color: #111;
+    border-color: #46d369;
   }
 
+  .icon.reaction-active:hover {
+    background: #7ef0a0;
+    border-color: #7ef0a0;
+  }
+
+  /* Play button */
+  .play {
+    background: white;
+    color: black;
+    border: none;
+  }
 
   .play:hover {
     background: #e5e5e5;
   }
 
-
-  /* =========================================
-     MORE BUTTON
-  ========================================= */
-
+  /* More button */
   .more {
     margin-left: auto;
   }
 
-
-  /* =========================================
-     GENRES
-  ========================================= */
-
+  /* Genres */
   .genres {
     display: flex;
-
     flex-wrap: wrap;
-
     gap: 0.45rem;
-
     list-style: none;
-
     margin: 0;
-
     padding: 0;
   }
 
-
   .genres li {
     color: #46d369;
-
     font-size: 0.82rem;
-
     font-weight: 600;
-
-    white-space: nowrap;
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
-
 
   .genres li::after {
     content: "•";
-
     color: #666;
-
     margin-left: 8px;
   }
-
 
   .genres li:last-child::after {
     display: none;
   }
 
-
-  /* =========================================
-     LARGE DESKTOP
-     1440px+
-  ========================================= */
-
+  /* Large desktop: 1440px+ */
   @media (min-width: 1440px) {
-
     width: 175px;
     height: 263px;
 
@@ -607,21 +580,14 @@ const Container = styled.div`
     }
   }
 
-
-  /* =========================================
-     LAPTOP
-     769px - 1024px
-  ========================================= */
-
+  /* Laptop: up to 1024px */
   @media (max-width: 1024px) {
-
     width: 150px;
     height: 225px;
 
     .hover {
       width: 330px;
-
-      max-width: 90vw;
+      max-width: calc(100vw - 24px);
     }
 
     .image-video-container {
@@ -647,28 +613,19 @@ const Container = styled.div`
     .icon {
       width: 35px;
       height: 35px;
-
       padding: 6px;
     }
   }
 
-
-  /* =========================================
-     TABLET
-     481px - 768px
-  ========================================= */
-
+  /* Tablet: up to 768px */
   @media (max-width: 768px) {
-
     width: 135px;
     height: 203px;
 
     .hover {
       width: 300px;
-
-      max-width: 85vw;
-
-      top: -25px;
+      max-width: calc(100vw - 24px);
+      top: -10px;
     }
 
     .image-video-container {
@@ -681,40 +638,31 @@ const Container = styled.div`
 
     .movie-title {
       font-size: 0.95rem;
-
       line-height: 1.25;
-
       margin-bottom: 0.6rem;
     }
 
     .movie-info {
       gap: 0.5rem;
-
       font-size: 0.78rem;
-
       margin-bottom: 0.7rem;
     }
 
     .overview {
       font-size: 0.82rem;
-
       line-height: 1.4;
-
       -webkit-line-clamp: 2;
-
       margin-bottom: 0.8rem;
     }
 
     .controls {
       gap: 0.5rem;
-
       margin-bottom: 0.8rem;
     }
 
     .icon {
       width: 32px;
       height: 32px;
-
       padding: 6px;
     }
 
@@ -731,28 +679,16 @@ const Container = styled.div`
     }
   }
 
-
-  /* =========================================
-     MOBILE
-     361px - 480px
-  ========================================= */
-
+  /* Mobile: 361px–480px */
   @media (max-width: 480px) {
-
     width: 125px;
     height: 188px;
 
     .hover {
-      width: 280px;
-
-      /*
-        Never allow the popup to become
-        wider than the phone screen.
-      */
+      width: min(280px, calc(100vw - 24px));
       max-width: calc(100vw - 24px);
-
-      top: -20px;
-
+      left: 0;
+      top: -10px;
       border-radius: 10px;
     }
 
@@ -766,40 +702,31 @@ const Container = styled.div`
 
     .movie-title {
       font-size: 0.9rem;
-
       line-height: 1.25;
-
       margin-bottom: 0.55rem;
     }
 
     .movie-info {
       gap: 0.4rem;
-
       font-size: 0.72rem;
-
       margin-bottom: 0.65rem;
     }
 
     .overview {
       font-size: 0.78rem;
-
       line-height: 1.4;
-
       -webkit-line-clamp: 2;
-
       margin-bottom: 0.7rem;
     }
 
     .controls {
       gap: 0.45rem;
-
       margin-bottom: 0.7rem;
     }
 
     .icon {
       width: 30px;
       height: 30px;
-
       padding: 5px;
     }
 
@@ -816,23 +743,16 @@ const Container = styled.div`
     }
   }
 
-
-  /* =========================================
-     SMALL MOBILE
-     320px - 360px
-  ========================================= */
-
+  /* Small mobile: 320px–360px */
   @media (max-width: 360px) {
-
     width: 115px;
     height: 173px;
 
     .hover {
-      width: 260px;
-
+      width: min(260px, calc(100vw - 20px));
       max-width: calc(100vw - 20px);
-
-      top: -15px;
+      left: 0;
+      top: -10px;
     }
 
     .image-video-container {
@@ -845,19 +765,16 @@ const Container = styled.div`
 
     .movie-title {
       font-size: 0.85rem;
-
       margin-bottom: 0.5rem;
     }
 
     .movie-info {
       gap: 0.3rem;
-
       font-size: 0.68rem;
     }
 
     .overview {
       font-size: 0.75rem;
-
       line-height: 1.35;
     }
 
@@ -868,7 +785,6 @@ const Container = styled.div`
     .icon {
       width: 28px;
       height: 28px;
-
       padding: 4px;
     }
 
@@ -881,41 +797,33 @@ const Container = styled.div`
     }
   }
 
-
-  /* =========================================
-     TOUCH DEVICES
-     
-     Phones/tablets don't have real hover.
-  ========================================= */
-
+  /* Touch devices */
   @media (hover: none) and (pointer: coarse) {
-
     &:hover {
       transform: none;
     }
 
     .icon:hover {
       background: transparent;
-
       color: white;
-
-      border-color:
-        rgba(255, 255, 255, 0.35);
-
+      border-color: rgba(255, 255, 255, 0.35);
       transform: none;
+    }
+
+    .icon.reaction-active:hover {
+      background: #46d369;
+      color: #111;
+      border-color: #46d369;
     }
 
     .play:hover {
       background: white;
-
       color: black;
     }
 
     .read-more:hover {
       color: #46d369;
     }
-
-    
   }
 `;
 

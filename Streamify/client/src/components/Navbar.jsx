@@ -2,7 +2,14 @@ import React, { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import styled from "styled-components";
 import logo from "../assets/logo.png";
-import { FaPowerOff, FaUser, FaCog, FaSignInAlt, FaSearch, FaBookmark } from "react-icons/fa";
+import {
+  FaPowerOff,
+  FaUser,
+  FaCog,
+  FaSignInAlt,
+  FaSearch,
+  FaBookmark,
+} from "react-icons/fa";
 import { Link, useNavigate } from "react-router-dom";
 import { signOut, onAuthStateChanged } from "firebase/auth";
 import { firebaseAuth } from "../Utils/firebase-config";
@@ -15,28 +22,34 @@ export default function Navbar({ isScrolled }) {
     { name: "Anime", link: "/anime" },
   ];
 
-  const [showSearch, setShoweSearch] = useState(false);
-  const [inputHover, setInputHover] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const navigate = useNavigate();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [user, setUser] = useState(null);
-  const profileRef = useRef(null);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
 
+  const navigate = useNavigate();
+
+  const profileRef = useRef(null);
+  const searchRef = useRef(null);
+
+  // Open the Search page.
   const handleSearch = (e) => {
     e.preventDefault();
 
     const query = searchQuery.trim();
 
-    if (!query) return;
-
-    navigate(`/search?query=${encodeURIComponent(query)}`);
+    if (query) {
+      navigate(`/search?query=${encodeURIComponent(query)}`);
+    } else {
+      navigate("/search");
+    }
 
     setSearchQuery("");
-    setShoweSearch(false);
+    setShowSearch(false);
   };
 
+  // Firebase authentication listener.
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(
       firebaseAuth,
@@ -48,6 +61,7 @@ export default function Navbar({ isScrolled }) {
     return () => unsubscribe();
   }, []);
 
+  // Close profile menu when clicking outside.
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
@@ -61,20 +75,45 @@ export default function Navbar({ isScrolled }) {
     document.addEventListener("mousedown", handleClickOutside);
 
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener(
+        "mousedown",
+        handleClickOutside
+      );
     };
   }, []);
 
+  // Close the expanded Navbar search when clicking outside.
+  useEffect(() => {
+    const handleSearchClickOutside = (event) => {
+      if (
+        searchRef.current &&
+        !searchRef.current.contains(event.target)
+      ) {
+        setShowSearch(false);
+      }
+    };
+
+    document.addEventListener(
+      "mousedown",
+      handleSearchClickOutside
+    );
+
+    return () => {
+      document.removeEventListener(
+        "mousedown",
+        handleSearchClickOutside
+      );
+    };
+  }, []);
+
+  // Logout.
   const handleLogout = async () => {
     try {
       await signOut(firebaseAuth);
       toast.success("Logout Successful");
-
-      setTimeout(() => {
-        navigate("/login");
-      }, 1500);
       navigate("/login");
     } catch (error) {
+      console.error("Logout error:", error);
       toast.error("Logout failed. Please try again.");
     }
   };
@@ -82,23 +121,17 @@ export default function Navbar({ isScrolled }) {
   return (
     <Container>
       <nav className={isScrolled ? "scrolled" : ""}>
-
-        {/* ========================================
-          LEFT
-      ======================================== */}
-
+        {/* LEFT SECTION */}
         <div className="left">
-
           <div className="brand">
             <img
               src={logo}
-              alt="logo"
+              alt="Streamify logo"
               onClick={() => navigate("/")}
             />
           </div>
 
           {/* DESKTOP NAVIGATION */}
-
           <ul className="links">
             {links.map(({ name, link }) => (
               <li key={name}>
@@ -106,105 +139,86 @@ export default function Navbar({ isScrolled }) {
               </li>
             ))}
           </ul>
-
         </div>
 
-
-        {/* ========================================
-          RIGHT
-      ======================================== */}
-
+        {/* RIGHT SECTION */}
         <div className="right">
-
           {/* SEARCH */}
-
           <div
-            className={`search ${showSearch ? "show-search" : ""
-              }`}
+            className={`search ${
+              showSearch ? "show-search" : ""
+            }`}
+            ref={searchRef}
           >
-
-
             <input
               type="text"
               placeholder="Search movies, TV shows..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) =>
+                setSearchQuery(e.target.value)
+              }
+              onFocus={() => setShowSearch(true)}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   handleSearch(e);
                 }
+
+                if (e.key === "Escape") {
+                  setShowSearch(false);
+                  setSearchQuery("");
+                }
               }}
-              onMouseEnter={() => setInputHover(true)}
-              onMouseLeave={() => setInputHover(false)}
-              onBlur={() => {
-                setShoweSearch(false);
-                setInputHover(false);
-              }}
+              aria-label="Search movies and TV shows"
             />
-
-
 
             <button
               type="button"
+              aria-label="Open search page"
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => {
-                if (showSearch && searchQuery.trim()) {
-                  handleSearch({ preventDefault: () => { } });
-                } else {
-                  setShoweSearch(true);
-                }
+                setSearchQuery("");
+                setShowSearch(false);
+                navigate("/search");
               }}
-              aria-label="Search"
             >
               <FaSearch />
             </button>
-
-
           </div>
 
-
           {/* PROFILE */}
-
           <div
             className="profile-container"
             ref={profileRef}
           >
-
             <button
+              type="button"
               className="profile-button"
+              aria-label="Open profile menu"
               onClick={() =>
-                setShowProfileMenu(!showProfileMenu)
+                setShowProfileMenu((previous) => !previous)
               }
             >
-
               {user?.photoURL ? (
-                <img
-                  src={user.photoURL}
-                  alt="Profile"
-                />
+                <img src={user.photoURL} alt="Profile" />
               ) : (
                 <span>
                   {user?.displayName
                     ? user.displayName
-                      .charAt(0)
-                      .toUpperCase()
-                    : user?.email
-                      ?.charAt(0)
-                      .toUpperCase() || "U"}
+                        .charAt(0)
+                        .toUpperCase()
+                    : user?.email?.charAt(0).toUpperCase() ||
+                      "U"}
                 </span>
               )}
-
             </button>
 
-
             {/* PROFILE DROPDOWN */}
-
             {showProfileMenu && (
               <div className="profile-menu">
-
                 {user ? (
                   <>
                     <button
+                      type="button"
                       onClick={() => {
                         setShowProfileMenu(false);
                         navigate("/profile");
@@ -215,6 +229,7 @@ export default function Navbar({ isScrolled }) {
                     </button>
 
                     <button
+                      type="button"
                       onClick={() => {
                         setShowProfileMenu(false);
                         navigate("/watchlist");
@@ -225,6 +240,7 @@ export default function Navbar({ isScrolled }) {
                     </button>
 
                     <button
+                      type="button"
                       onClick={() => {
                         setShowProfileMenu(false);
                         navigate("/settings");
@@ -234,9 +250,10 @@ export default function Navbar({ isScrolled }) {
                       <span>Settings</span>
                     </button>
 
-                    <div className="menu-divider"></div>
+                    <div className="menu-divider" />
 
                     <button
+                      type="button"
                       className="logout"
                       onClick={() => {
                         setShowProfileMenu(false);
@@ -250,6 +267,7 @@ export default function Navbar({ isScrolled }) {
                 ) : (
                   <>
                     <button
+                      type="button"
                       onClick={() => {
                         setShowProfileMenu(false);
                         navigate("/login");
@@ -260,6 +278,7 @@ export default function Navbar({ isScrolled }) {
                     </button>
 
                     <button
+                      type="button"
                       onClick={() => {
                         setShowProfileMenu(false);
                         navigate("/signup");
@@ -270,40 +289,30 @@ export default function Navbar({ isScrolled }) {
                     </button>
                   </>
                 )}
-
               </div>
             )}
-
           </div>
 
-
-          {/* ========================================
-            MOBILE HAMBURGER
-        ======================================== */}
-
+          {/* MOBILE HAMBURGER */}
           <button
+            type="button"
             className="mobile-menu-button"
             onClick={() => {
-              setShowMobileMenu(!showMobileMenu);
+              setShowMobileMenu((previous) => !previous);
               setShowProfileMenu(false);
             }}
             aria-label="Toggle navigation menu"
           >
             {showMobileMenu ? "✕" : "☰"}
           </button>
-
         </div>
 
-
-        {/* ========================================
-          MOBILE NAVIGATION MENU
-      ======================================== */}
-
+        {/* MOBILE NAVIGATION */}
         <ul
-          className={`mobile-links ${showMobileMenu ? "mobile-open" : ""
-            }`}
+          className={`mobile-links ${
+            showMobileMenu ? "mobile-open" : ""
+          }`}
         >
-
           {links.map(({ name, link }) => (
             <li key={name}>
               <Link
@@ -314,124 +323,74 @@ export default function Navbar({ isScrolled }) {
               </Link>
             </li>
           ))}
-
         </ul>
-
       </nav>
     </Container>
   );
-};
+}
 
 const Container = styled.div`
-  /* =========================================================
-     ROOT
-  ========================================================= */
-
   position: relative;
   width: 100%;
-
   z-index: 9999;
-
-
-  /* =========================================================
-     NAVBAR
-  ========================================================= */
 
   nav {
     position: fixed;
-
     top: 0;
     left: 0;
-
     width: 100%;
     height: 72px;
-
     padding: 0 3rem;
-
     box-sizing: border-box;
-
     display: flex;
     align-items: center;
     justify-content: space-between;
-
     background: rgba(10, 10, 10, 0.78);
-
     border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
-
     z-index: 9999;
-
     transition:
       background 0.3s ease,
       box-shadow 0.3s ease,
       border-color 0.3s ease;
   }
 
-
-  /* =========================================================
-     SCROLLED NAVBAR
-  ========================================================= */
-
   nav.scrolled {
     background: rgba(15, 15, 15, 0.97);
-
     border-bottom-color: rgba(255, 255, 255, 0.07);
-
-    box-shadow:
-      0 4px 20px rgba(0, 0, 0, 0.45);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
   }
 
-
-  /* =========================================================
-     LEFT SECTION
-  ========================================================= */
-
+  /* LEFT SECTION */
   .left {
     height: 100%;
-
     min-width: 0;
-
     display: flex;
     align-items: center;
-
     gap: 2.5rem;
-
     flex: 1;
   }
 
-
-  /* =========================================================
-     BRAND / LOGO
-  ========================================================= */
-
+  /* LOGO */
   .brand {
     width: 120px;
     height: 60px;
-
     display: flex;
     align-items: center;
     justify-content: center;
-
     flex-shrink: 0;
-
     overflow: hidden;
   }
 
   .brand img {
     display: block;
-
     width: 115px;
     height: 58px;
-
     object-fit: contain;
     object-position: center;
-
     cursor: pointer;
-
     user-select: none;
-
     transition:
       transform 0.25s ease,
       filter 0.25s ease;
@@ -439,25 +398,18 @@ const Container = styled.div`
 
   .brand img:hover {
     transform: scale(1.04);
-
-    filter:
-      drop-shadow(0 4px 10px rgba(70, 211, 105, 0.15));
+    filter: drop-shadow(
+      0 4px 10px rgba(70, 211, 105, 0.15)
+    );
   }
 
-
-  /* =========================================================
-     DESKTOP NAVIGATION LINKS
-  ========================================================= */
-
+  /* DESKTOP LINKS */
   .links {
     display: flex;
     align-items: center;
-
     gap: 2rem;
-
     margin: 0;
     padding: 0;
-
     list-style: none;
   }
 
@@ -468,94 +420,59 @@ const Container = styled.div`
 
   .links a {
     position: relative;
-
     display: inline-flex;
     align-items: center;
-
     height: 72px;
-
     color: #d6d6d6;
-
     text-decoration: none;
-
     font-size: 1rem;
     font-weight: 600;
-
     white-space: nowrap;
-
-    transition:
-      color 0.25s ease;
+    transition: color 0.25s ease;
   }
 
   .links a:hover {
-    color: #ffffff;
+    color: #fff;
   }
 
   .links a::after {
     content: "";
-
     position: absolute;
-
     left: 0;
     bottom: 16px;
-
     width: 0;
     height: 2px;
-
     border-radius: 10px;
-
     background: #46d369;
-
-    transition:
-      width 0.25s ease;
+    transition: width 0.25s ease;
   }
 
   .links a:hover::after {
     width: 100%;
   }
 
-
-  /* =========================================================
-     RIGHT SECTION
-  ========================================================= */
-
+  /* RIGHT SECTION */
   .right {
     display: flex;
     align-items: center;
-
     gap: 0.65rem;
-
     flex-shrink: 0;
   }
-
-
-  /* =========================================================
-     GENERIC RIGHT BUTTON
-  ========================================================= */
 
   .right > button {
     width: 40px;
     height: 40px;
-
     padding: 0;
-
     display: flex;
     align-items: center;
     justify-content: center;
-
     border: none;
     border-radius: 50%;
-
     background: transparent;
-
-    color: #ffffff;
-
+    color: #fff;
     font-size: 1.15rem;
-
     cursor: pointer;
-
     outline: none;
-
     transition:
       background 0.25s ease,
       color 0.25s ease,
@@ -564,7 +481,6 @@ const Container = styled.div`
 
   .right > button:hover {
     background: rgba(255, 255, 255, 0.09);
-
     color: #46d369;
   }
 
@@ -572,27 +488,18 @@ const Container = styled.div`
     transform: scale(0.93);
   }
 
-
-  /* =========================================================
-     SEARCH
-  ========================================================= */
-
+  /* NAVBAR SEARCH */
   .search {
+    position: relative;
     width: 40px;
     height: 38px;
-
     display: flex;
     align-items: center;
-
-    overflow: hidden;
-
+    overflow: visible;
     box-sizing: border-box;
-
     border: 1px solid transparent;
     border-radius: 6px;
-
     background: transparent;
-
     transition:
       width 0.3s ease,
       background 0.3s ease,
@@ -602,35 +509,23 @@ const Container = styled.div`
 
   .search.show-search {
     width: 230px;
-
     background: rgba(0, 0, 0, 0.72);
-
     border-color: rgba(255, 255, 255, 0.25);
-
-    box-shadow:
-      0 4px 15px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
   }
 
   .search input {
     flex: 1;
-
     width: 0;
     min-width: 0;
     height: 100%;
-
     padding: 0;
-
     border: none;
     outline: none;
-
     background: transparent;
-
-    color: #ffffff;
-
+    color: #fff;
     font-family: inherit;
-
     font-size: 0.9rem;
-
     transition:
       width 0.3s ease,
       padding 0.3s ease;
@@ -638,7 +533,6 @@ const Container = styled.div`
 
   .search.show-search input {
     width: 100%;
-
     padding: 0 10px;
   }
 
@@ -646,31 +540,19 @@ const Container = styled.div`
     color: rgba(255, 255, 255, 0.55);
   }
 
-  .search input:focus {
-    color: #ffffff;
-  }
-
   .search button {
     width: 40px;
     min-width: 40px;
     height: 38px;
-
     padding: 0;
-
     display: flex;
     align-items: center;
     justify-content: center;
-
     border: none;
-
     background: transparent;
-
-    color: #ffffff;
-
+    color: #fff;
     cursor: pointer;
-
     outline: none;
-
     transition:
       background 0.2s ease,
       color 0.2s ease;
@@ -678,60 +560,33 @@ const Container = styled.div`
 
   .search button:hover {
     background: rgba(255, 255, 255, 0.08);
-
     color: #46d369;
   }
 
-
-  /* =========================================================
-     PROFILE CONTAINER
-  ========================================================= */
-
+  /* PROFILE */
   .profile-container {
     position: relative;
-
     display: flex;
     align-items: center;
-
     z-index: 10000;
   }
-
-
-  /* =========================================================
-     PROFILE AVATAR
-  ========================================================= */
 
   .profile-button {
     width: 42px;
     height: 42px;
-
     padding: 0;
     margin: 0;
-
     display: flex;
     align-items: center;
     justify-content: center;
-
     box-sizing: border-box;
-
     border: 2px solid rgba(255, 255, 255, 0.18);
-
     border-radius: 50%;
-
-    background: linear-gradient(
-      145deg,
-      #3a3a3a,
-      #222222
-    );
-
-    color: #ffffff;
-
+    background: linear-gradient(145deg, #3a3a3a, #222);
+    color: #fff;
     cursor: pointer;
-
     overflow: hidden;
-
     outline: none;
-
     transition:
       transform 0.25s ease,
       border-color 0.25s ease,
@@ -740,9 +595,7 @@ const Container = styled.div`
 
   .profile-button:hover {
     transform: scale(1.07);
-
     border-color: rgba(255, 255, 255, 0.55);
-
     box-shadow:
       0 0 0 3px rgba(255, 255, 255, 0.07),
       0 6px 18px rgba(0, 0, 0, 0.45);
@@ -752,141 +605,78 @@ const Container = styled.div`
     transform: scale(0.95);
   }
 
-
-  /* =========================================================
-     PROFILE IMAGE
-  ========================================================= */
-
   .profile-button img {
     display: block;
-
     width: 100%;
     height: 100%;
-
     object-fit: cover;
-
     border-radius: 50%;
   }
-
-
-  /* =========================================================
-     PROFILE INITIAL
-  ========================================================= */
 
   .profile-button span {
     width: 100%;
     height: 100%;
-
     display: flex;
     align-items: center;
     justify-content: center;
-
-    color: #ffffff;
-
+    color: #fff;
     font-family: Arial, sans-serif;
-
     font-size: 17px;
     font-weight: 700;
-
     text-transform: uppercase;
-
     user-select: none;
   }
 
-
-  /* =========================================================
-     PROFILE DROPDOWN
-  ========================================================= */
-
+  /* PROFILE DROPDOWN */
   .profile-menu {
     position: absolute;
-
     top: calc(100% + 12px);
     right: 0;
-
     width: 210px;
-
     padding: 8px;
-
     box-sizing: border-box;
-
     background: rgba(24, 24, 24, 0.98);
-
     border: 1px solid rgba(255, 255, 255, 0.1);
-
     border-radius: 10px;
-
     box-shadow:
       0 18px 45px rgba(0, 0, 0, 0.7),
       0 5px 15px rgba(0, 0, 0, 0.35);
-
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-
     z-index: 99999;
-
-    animation:
-      profileDropdown 0.2s ease-out;
+    animation: profileDropdown 0.2s ease-out;
   }
-
-
-  /* =========================================================
-     DROPDOWN ANIMATION
-  ========================================================= */
 
   @keyframes profileDropdown {
     from {
       opacity: 0;
-
-      transform:
-        translateY(-8px)
-        scale(0.96);
+      transform: translateY(-8px) scale(0.96);
     }
 
     to {
       opacity: 1;
-
-      transform:
-        translateY(0)
-        scale(1);
+      transform: translateY(0) scale(1);
     }
   }
-
-
-  /* =========================================================
-     PROFILE MENU BUTTONS
-  ========================================================= */
 
   .profile-menu button {
     width: 100%;
     min-height: 44px;
-
     padding: 10px 12px;
     margin: 0;
-
     display: flex;
     align-items: center;
-
     gap: 13px;
-
     border: none;
     border-radius: 7px;
-
     background: transparent;
-
     color: #d6d6d6;
-
     font-family: Arial, sans-serif;
-
     font-size: 14px;
     font-weight: 500;
-
     text-align: left;
-
     cursor: pointer;
-
     outline: none;
-
     transition:
       background 0.2s ease,
       color 0.2s ease,
@@ -896,11 +686,8 @@ const Container = styled.div`
   .profile-menu button svg {
     width: 17px;
     min-width: 17px;
-
     font-size: 15px;
-
-    color: #aaaaaa;
-
+    color: #aaa;
     transition:
       color 0.2s ease,
       transform 0.2s ease;
@@ -908,48 +695,29 @@ const Container = styled.div`
 
   .profile-menu button:hover {
     background: rgba(255, 255, 255, 0.08);
-
-    color: #ffffff;
-
+    color: #fff;
     transform: translateX(2px);
   }
 
   .profile-menu button:hover svg {
-    color: #ffffff;
-
+    color: #fff;
     transform: scale(1.08);
   }
-
-
-  /* =========================================================
-     MENU DIVIDER
-  ========================================================= */
 
   .menu-divider {
     width: calc(100% - 8px);
     height: 1px;
-
     margin: 7px 4px;
-
     background: rgba(255, 255, 255, 0.1);
   }
 
-
-  /* =========================================================
-     LOGOUT
-  ========================================================= */
-
-  .profile-menu .logout {
-    color: #ff5a5a;
-  }
-
+  .profile-menu .logout,
   .profile-menu .logout svg {
     color: #ff5a5a;
   }
 
   .profile-menu .logout:hover {
     background: rgba(229, 9, 20, 0.12);
-
     color: #ff3333;
   }
 
@@ -957,35 +725,21 @@ const Container = styled.div`
     color: #ff3333;
   }
 
-
-  /* =========================================================
-     MOBILE MENU BUTTON
-  ========================================================= */
-
+  /* MOBILE MENU BUTTON */
   .mobile-menu-button {
     display: none;
-
     width: 40px;
     height: 40px;
-
     padding: 0;
-
     align-items: center;
     justify-content: center;
-
     border: none;
     border-radius: 50%;
-
     background: rgba(255, 255, 255, 0.08);
-
-    color: #ffffff;
-
+    color: #fff;
     font-size: 1.35rem;
-
     cursor: pointer;
-
     outline: none;
-
     transition:
       background 0.25s ease,
       color 0.25s ease,
@@ -994,7 +748,6 @@ const Container = styled.div`
 
   .mobile-menu-button:hover {
     background: rgba(255, 255, 255, 0.14);
-
     color: #46d369;
   }
 
@@ -1002,22 +755,12 @@ const Container = styled.div`
     transform: scale(0.92);
   }
 
-
-  /* =========================================================
-     MOBILE LINKS
-  ========================================================= */
-
   .mobile-links {
     display: none;
   }
 
-
-  /* =========================================================
-     TABLET
-  ========================================================= */
-
+  /* TABLET */
   @media (max-width: 1024px) {
-
     nav {
       padding: 0 1.5rem;
     }
@@ -1047,30 +790,17 @@ const Container = styled.div`
     }
   }
 
-
-  /* =========================================================
-     MOBILE
-  ========================================================= */
-
+  /* MOBILE */
   @media (max-width: 768px) {
-
     nav {
       height: 62px;
-
       padding: 0 1rem;
     }
 
-
-    /* LEFT */
-
     .left {
       gap: 0;
-
       flex: 1;
     }
-
-
-    /* LOGO */
 
     .brand {
       width: 90px;
@@ -1082,22 +812,13 @@ const Container = styled.div`
       height: 48px;
     }
 
-
-    /* HIDE DESKTOP LINKS */
-
     .links {
       display: none;
     }
 
-
-    /* RIGHT */
-
     .right {
       gap: 0.35rem;
     }
-
-
-    /* SEARCH */
 
     .search {
       width: 40px;
@@ -1108,9 +829,6 @@ const Container = styled.div`
       width: 180px;
     }
 
-
-    /* PROFILE */
-
     .profile-button {
       width: 38px;
       height: 38px;
@@ -1120,72 +838,43 @@ const Container = styled.div`
       font-size: 15px;
     }
 
-
-    /* HAMBURGER */
-
     .mobile-menu-button {
       display: flex;
     }
 
-
-    /* PROFILE MENU */
-
     .profile-menu {
       width: 190px;
-
       top: calc(100% + 10px);
     }
 
     .profile-menu button {
       min-height: 42px;
-
       font-size: 13px;
     }
 
-
-    /* =====================================================
-       MOBILE NAVIGATION PANEL
-    ===================================================== */
-
     .mobile-links {
       position: absolute;
-
       top: 62px;
       left: 0;
-
       width: 100%;
-
       margin: 0;
       padding: 0.5rem 0;
-
       box-sizing: border-box;
-
       display: none;
-
       flex-direction: column;
-
       list-style: none;
-
       background: rgba(15, 15, 15, 0.98);
-
       border-top: 1px solid rgba(255, 255, 255, 0.07);
-
       border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-
-      box-shadow:
-        0 12px 30px rgba(0, 0, 0, 0.6);
-
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
       backdrop-filter: blur(18px);
       -webkit-backdrop-filter: blur(18px);
-
       z-index: 9998;
     }
 
     .mobile-links.mobile-open {
       display: flex;
-
-      animation:
-        mobileMenuOpen 0.25s ease-out;
+      animation: mobileMenuOpen 0.25s ease-out;
     }
 
     .mobile-links li {
@@ -1195,21 +884,14 @@ const Container = styled.div`
     .mobile-links a {
       width: 100%;
       min-height: 52px;
-
       padding: 0 1.5rem;
-
       box-sizing: border-box;
-
       display: flex;
       align-items: center;
-
-      color: #dddddd;
-
+      color: #ddd;
       text-decoration: none;
-
       font-size: 1rem;
       font-weight: 600;
-
       transition:
         background 0.2s ease,
         color 0.2s ease,
@@ -1218,51 +900,34 @@ const Container = styled.div`
 
     .mobile-links a:hover {
       background: rgba(255, 255, 255, 0.07);
-
-      color: #ffffff;
-
+      color: #fff;
       padding-left: 1.8rem;
     }
 
     .mobile-links a:active {
       background: rgba(70, 211, 105, 0.1);
-
       color: #46d369;
     }
 
     @keyframes mobileMenuOpen {
-
       from {
         opacity: 0;
-
-        transform:
-          translateY(-10px);
+        transform: translateY(-10px);
       }
 
       to {
         opacity: 1;
-
-        transform:
-          translateY(0);
+        transform: translateY(0);
       }
     }
   }
 
-
-  /* =========================================================
-     SMALL MOBILE
-  ========================================================= */
-
+  /* SMALL MOBILE */
   @media (max-width: 480px) {
-
     nav {
       height: 60px;
-
       padding: 0 0.7rem;
     }
-
-
-    /* LOGO */
 
     .brand {
       width: 82px;
@@ -1274,49 +939,29 @@ const Container = styled.div`
       height: 46px;
     }
 
-
-    /* RIGHT */
-
     .right {
       gap: 0.15rem;
     }
 
-
-    /* SEARCH */
-
     .search.show-search {
       width: 150px;
     }
-
-
-    /* PROFILE */
 
     .profile-button {
       width: 36px;
       height: 36px;
     }
 
-
-    /* HAMBURGER */
-
     .mobile-menu-button {
       width: 36px;
       height: 36px;
-
       font-size: 1.2rem;
     }
 
-
-    /* PROFILE MENU */
-
     .profile-menu {
       width: 180px;
-
       right: -5px;
     }
-
-
-    /* MOBILE LINKS */
 
     .mobile-links {
       top: 60px;
@@ -1324,9 +969,7 @@ const Container = styled.div`
 
     .mobile-links a {
       min-height: 50px;
-
       padding: 0 1.25rem;
-
       font-size: 0.95rem;
     }
 
@@ -1335,13 +978,8 @@ const Container = styled.div`
     }
   }
 
-
-  /* =========================================================
-     VERY SMALL PHONES
-  ========================================================= */
-
+  /* VERY SMALL PHONES */
   @media (max-width: 360px) {
-
     nav {
       padding: 0 0.5rem;
     }
@@ -1373,13 +1011,8 @@ const Container = styled.div`
     }
   }
 
-
-  /* =========================================================
-     REDUCED MOTION
-  ========================================================= */
-
+  /* REDUCED MOTION */
   @media (prefers-reduced-motion: reduce) {
-
     nav,
     .brand img,
     .links a,
