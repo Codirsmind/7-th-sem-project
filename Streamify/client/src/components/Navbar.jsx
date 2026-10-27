@@ -17,11 +17,25 @@ export default function Navbar({ isScrolled }) {
 
   const [showSearch, setShoweSearch] = useState(false);
   const [inputHover, setInputHover] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [user, setUser] = useState(null);
   const profileRef = useRef(null);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+
+    const query = searchQuery.trim();
+
+    if (!query) return;
+
+    navigate(`/search?query=${encodeURIComponent(query)}`);
+
+    setSearchQuery("");
+    setShoweSearch(false);
+  };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(
@@ -109,9 +123,17 @@ export default function Navbar({ isScrolled }) {
               }`}
           >
 
+
             <input
               type="text"
-              placeholder="Search"
+              placeholder="Search movies, TV shows..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  handleSearch(e);
+                }
+              }}
               onMouseEnter={() => setInputHover(true)}
               onMouseLeave={() => setInputHover(false)}
               onBlur={() => {
@@ -120,16 +142,23 @@ export default function Navbar({ isScrolled }) {
               }}
             />
 
+
+
             <button
-              onClick={() => setShoweSearch(true)}
-              onBlur={() => {
-                if (!inputHover) {
-                  setShoweSearch(false);
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => {
+                if (showSearch && searchQuery.trim()) {
+                  handleSearch({ preventDefault: () => { } });
+                } else {
+                  setShoweSearch(true);
                 }
               }}
+              aria-label="Search"
             >
               <FaSearch />
             </button>
+
 
           </div>
 
